@@ -829,6 +829,7 @@ function dateStr(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padS
 // ═══════════════════════════════════════════
 var adminAuthorized = false;
 var adminSubFilter = 'all';
+var adminLoadedBusinesses = [];
 
 var MOCK_BUSINESSES = [
   { name: 'Balaji Wholesalers', subscription: 'active', subEnd: '2027-02-15', activity: 'active', invoices: 142, revenue: 485900, consent: true },
@@ -844,7 +845,7 @@ function renderAdminPortal() {
   if (adminAuthorized) {
     gate.style.display = 'none';
     panel.style.display = 'block';
-    renderAdminDashboard();
+    loadRealAdminData();
   } else {
     gate.style.display = 'flex';
     panel.style.display = 'none';
@@ -871,10 +872,101 @@ function logoutAdminPortal() {
   showToast('Logged out of Admin Portal', 'success');
 }
 
+function loadRealAdminData() {
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    showToast('Fetching platform accounts...', 'info');
+    firebaseDb.collection('users').get().then(function(querySnapshot) {
+      var realBusinesses = [];
+      var promises = [];
+      
+      querySnapshot.forEach(function(userDoc) {
+        var userData = userDoc.data();
+        var isCurrent = userDoc.id === firebaseAuth.currentUser.uid;
+        
+        var bizInfo = {
+          uid: userDoc.id,
+          name: (userData.businessSettings && userData.businessSettings.name) || userData.companyName || 'Unnamed Business',
+          subscription: userData.planType || 'free',
+          subEnd: userData.subscriptionExpiry || '—',
+          activity: 'active',
+          invoices: 0,
+          revenue: 0,
+          consent: userData.businessSettings ? (userData.businessSettings.analyticsConsent !== false) : true,
+          isCurrent: isCurrent
+        };
+        
+        var p = firebaseDb.collection('users').doc(userDoc.id).collection('invoices').get().then(function(invoiceSnap) {
+          var rev = 0;
+          invoiceSnap.forEach(function(invDoc) {
+            var inv = invDoc.data();
+            rev += inv.grandTotal || inv.total || 0;
+          });
+          bizInfo.invoices = invoiceSnap.size;
+          bizInfo.revenue = rev;
+        }).catch(function(err) {
+          console.error("Failed to fetch invoices for user: " + userDoc.id, err);
+        });
+        
+        realBusinesses.push(bizInfo);
+        promises.push(p);
+      });
+      
+      Promise.all(promises).then(function() {
+        adminLoadedBusinesses = realBusinesses;
+        renderAdminDashboard(realBusinesses);
+      });
+    }).catch(function(err) {
+      console.error("Failed to load admin platform data", err);
+      showToast('Live fetch restricted. Using simulated dataset.', 'error');
+      var mock = getAdminBusinesses();
+      adminLoadedBusinesses = mock;
+      renderAdminDashboard(mock);
+    });
+  } else {
+    // If running in sandbox local storage mode, fetch sandbox users
+    var list = [];
+    var currentBiz = loadData(KEYS.BUSINESS) || {};
+    var currentInvs = loadData(KEYS.INVOICES) || [];
+    var currentRev = 0;
+    currentInvs.forEach(function(inv) { currentRev += inv.grandTotal || inv.total || 0; });
+    
+    list.push({
+      name: currentBiz.name || 'Your Business Name (Sandbox)',
+      subscription: (currentUser && currentUser.planType) || 'free',
+      subEnd: (currentUser && currentUser.subscriptionExpiry) || '2027-05-25',
+      activity: 'active',
+      invoices: currentInvs.length,
+      revenue: currentRev,
+      consent: currentBiz.analyticsConsent !== false,
+      isCurrent: true
+    });
+    
+    // Add simulated sandbox users
+    var users = loadData('billblue_simulated_users') || {};
+    for (var email in users) {
+      var u = users[email];
+      var rev = 0;
+      if (u.invoicesList) u.invoicesList.forEach(function(inv) { rev += inv.grandTotal || inv.total || 0; });
+      
+      list.push({
+        name: (u.businessSettings && u.businessSettings.name) || 'Simulated Business',
+        subscription: u.planType || 'free',
+        subEnd: u.subscriptionExpiry || '2027-05-25',
+        activity: 'active',
+        invoices: u.invoicesList ? u.invoicesList.length : 0,
+        revenue: rev,
+        consent: u.businessSettings ? (u.businessSettings.analyticsConsent !== false) : true,
+        isCurrent: false
+      });
+    }
+    
+    adminLoadedBusinesses = list;
+    renderAdminDashboard(list);
+  }
+}
+
 function getAdminBusinesses() {
   var list = [];
-  
-  // 1. Add current user business
   var p = loadData(KEYS.BUSINESS) || {};
   var userInvs = loadData(KEYS.INVOICES) || [];
   
@@ -895,7 +987,6 @@ function getAdminBusinesses() {
     isCurrent: true
   });
   
-  // 2. Add mock businesses
   MOCK_BUSINESSES.forEach(function(mb) {
     list.push(mb);
   });
@@ -905,16 +996,17 @@ function getAdminBusinesses() {
 
 function setAdminSubFilter(filter, btn) {
   adminSubFilter = filter;
-  // Manage active button class
   document.querySelectorAll('#view-admin .filter-btn').forEach(function(b) {
     b.classList.remove('active');
   });
   if (btn) btn.classList.add('active');
-  renderAdminDashboard();
+  renderAdminDashboard(adminLoadedBusinesses);
 }
 
-function renderAdminDashboard() {
-  var businesses = getAdminBusinesses();
+function renderAdminDashboard(businesses) {
+  if (!businesses) {
+    businesses = adminLoadedBusinesses.length ? adminLoadedBusinesses : getAdminBusinesses();
+  }
   
   // Calculate Platform Analytics
   var totalRegistered = businesses.length;
@@ -927,7 +1019,6 @@ function renderAdminDashboard() {
     if (b.activity === 'active') activeUsers++;
     if (b.subscription === 'expiring') expiringSubs++;
     
-    // Aggregation ONLY if consent is true
     if (b.consent) {
       totalInvoices += b.invoices;
       totalRevenue += b.revenue;
@@ -960,9 +1051,10 @@ function renderAdminDashboard() {
     
     // Subscription Badge
     var subBadge = '';
-    if (b.subscription === 'active') subBadge = '<span class="badge badge-active">Active</span>';
+    if (b.subscription === 'active' || b.subscription === 'free') subBadge = '<span class="badge badge-active">Active</span>';
     else if (b.subscription === 'expiring') subBadge = '<span class="badge badge-expiring">Expiring</span>';
     else if (b.subscription === 'expired') subBadge = '<span class="badge badge-expired">Expired</span>';
+    else subBadge = '<span class="badge badge-active">' + b.subscription.toUpperCase() + '</span>';
     
     // Activity Badge
     var actBadge = b.activity === 'active' 
