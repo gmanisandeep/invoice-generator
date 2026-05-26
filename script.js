@@ -507,6 +507,13 @@ function loadInvoiceForEdit(id){
 }
 function deleteInvoice(id){
   if(!confirm('Delete this invoice?'))return;
+  
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid)
+      .collection('invoices').doc(id).delete()
+      .catch(function(e) { console.error("Firestore invoice deletion failed", e); });
+  }
+  
   var all=loadData(KEYS.INVOICES)||[];all=all.filter(function(i){return i.id!==id;});
   saveData(KEYS.INVOICES,all);showToast('Deleted','success');
   renderHistory();renderDashboard();
@@ -992,18 +999,16 @@ function renderAdminDashboard() {
 //  FIREBASE INITIALIZATION & SANDBOX
 // ═══════════════════════════════════════════
 function getFirebaseConfig() {
-  // 1. Build-time environment config override
-  if (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey) {
-    return window.FIREBASE_CONFIG;
-  }
-  
-  // 2. Local settings profile configuration fallback
-  try {
-    var conf = localStorage.getItem('billblue_firebase_config');
-    return conf ? JSON.parse(conf) : null;
-  } catch (e) {
-    return null;
-  }
+  // 1. Integrated Production Config for Bill Blue (Zero-Config Vercel Compatibility)
+  return {
+    apiKey: "AIzaSyCdtb-DWjZtcoRi5O2n63tuN1UBti9dous",
+    authDomain: "bill-blue.firebaseapp.com",
+    projectId: "bill-blue",
+    storageBucket: "bill-blue.firebasestorage.app",
+    messagingSenderId: "386786368749",
+    appId: "1:386786368749:web:aeeee9ba7238e9254f80e4",
+    measurementId: "G-RRFMPE1T61"
+  };
 }
 
 function initializeFirebase() {
