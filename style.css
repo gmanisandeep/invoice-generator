@@ -498,6 +498,43 @@ input[type="number"]{-moz-appearance:textfield;appearance:textfield}
   .invoice-actions{flex-direction:column}.invoice-actions .btn{min-width:unset}
   #toast-container{bottom:72px;right:10px;left:10px}.toast{max-width:100%}
   .filter-bar{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+
+  /* Make table inputs look obviously tappable on mobile viewports */
+  .inv-table tbody td input {
+    background: rgba(37, 99, 235, 0.02) !important;
+    border-bottom: 1px dashed rgba(37, 99, 235, 0.15) !important;
+    border-radius: 0 !important;
+    transition: all var(--transition) !important;
+  }
+  .inv-table tbody td input:focus {
+    background: var(--primary-soft) !important;
+    border-bottom: 1px solid var(--primary-med) !important;
+  }
+  
+  /* Make other A4 invoice sheet inputs look highly interactive and editable on mobile viewports */
+  .inv-input {
+    border: 1px dashed rgba(37, 99, 235, 0.2) !important;
+    background: rgba(37, 99, 235, 0.01) !important;
+  }
+  .inv-input:focus {
+    border-style: solid !important;
+    background: #fff !important;
+    border-color: var(--primary-med) !important;
+  }
+  
+  /* Force native-style, highly visible scrollbars for mobile A4 scroll wrapper so users know they can swipe */
+  .invoice-scroll-wrap::-webkit-scrollbar {
+    height: 8px !important;
+    display: block !important;
+  }
+  .invoice-scroll-wrap::-webkit-scrollbar-track {
+    background: #f3f4f6 !important;
+    border-radius: 4px !important;
+  }
+  .invoice-scroll-wrap::-webkit-scrollbar-thumb {
+    background: var(--primary-light) !important;
+    border-radius: 4px !important;
+  }
 }
 @media(max-width:440px){html{font-size:13px}.stat-value{font-size:.85rem}.stats-grid-4{grid-template-columns:1fr 1fr}}
 
