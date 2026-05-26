@@ -30,6 +30,8 @@
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=3">
+  <!-- Razorpay Checkout Integration -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
 
@@ -71,6 +73,10 @@
       <a class="nav-item" data-view="settings" onclick="navigateTo('settings')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>Settings</span>
+      </a>
+      <a class="nav-item" onclick="openUpgradeModal()" style="color: var(--purple); font-weight: 700; background: var(--purple-bg); border: 1px solid rgba(124, 58, 237, 0.1); margin-top: 8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span>Upgrade Plan</span>
       </a>
     </nav>
     
@@ -140,14 +146,6 @@
           <div class="auth-form-group">
             <label>Password</label>
             <input type="password" id="register-password" placeholder="Min 6 characters">
-          </div>
-          <div class="auth-form-group">
-            <label>Select Initial Plan</label>
-            <select id="register-plan" class="inv-select" style="margin-top: 4px;">
-              <option value="free">Free Tier (10 invoices/mo)</option>
-              <option value="basic">Basic Plan (₹99/year)</option>
-              <option value="pro">Pro Plan (₹299/year)</option>
-            </select>
           </div>
           <button class="btn btn-primary btn-auth" onclick="handleRegister()">Create Account</button>
           <div class="auth-footer-text">
@@ -462,20 +460,29 @@
         <div class="stats-grid-4">
           <div class="stat-card">
             <div class="stat-icon si-indigo">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <div class="stat-content">
               <span class="stat-value" id="ad-total-businesses">0</span>
-              <span class="stat-label">Total Businesses</span>
+              <span class="stat-label">Total Accounts</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon si-cyan">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="ad-free-users">0</span>
+              <span class="stat-label">Free Users</span>
             </div>
           </div>
           <div class="stat-card">
             <div class="stat-icon si-green">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <div class="stat-content">
-              <span class="stat-value" id="ad-active-users">0</span>
-              <span class="stat-label">Active Users</span>
+              <span class="stat-value" id="ad-paid-users">0</span>
+              <span class="stat-label">Paid Subscribers</span>
             </div>
           </div>
           <div class="stat-card">
@@ -484,16 +491,7 @@
             </div>
             <div class="stat-content">
               <span class="stat-value" id="ad-expiring-subs">0</span>
-              <span class="stat-label">Expiring Subs (30d)</span>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon si-cyan">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            </div>
-            <div class="stat-content">
-              <span class="stat-value" id="ad-total-invoices">0</span>
-              <span class="stat-label">Platform Invoices</span>
+              <span class="stat-label">Expiring Plans</span>
             </div>
           </div>
           <div class="stat-card stat-card-full-wide">
@@ -502,7 +500,7 @@
             </div>
             <div class="stat-content">
               <span class="stat-value" id="ad-total-revenue">₹0.00</span>
-              <span class="stat-label">Total Platform Revenue Processed</span>
+              <span class="stat-label">SaaS Subscription Revenue Earned</span>
             </div>
           </div>
         </div>
@@ -553,8 +551,8 @@
   <div class="modal-backdrop" id="upgrade-modal" style="display:none">
     <div class="upgrade-modal-card">
       <div class="upgrade-modal-header">
-        <h2 class="upgrade-modal-title">Upgrade Your Subscription Plan</h2>
-        <p class="upgrade-modal-subtitle">Select the perfect subscription tier to supercharge your business</p>
+        <h2 class="upgrade-modal-title">Upgrade Bill Blue</h2>
+        <p class="upgrade-modal-subtitle">Choose a plan to unlock premium features</p>
         <button class="btn-modal-close" onclick="closeUpgradeModal()">&times;</button>
       </div>
       <div class="pricing-grid">
@@ -565,11 +563,8 @@
             <div class="plan-price">₹0<span>/month</span></div>
           </div>
           <ul class="plan-features">
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 10 Invoices / month</li>
-            <li><svg class="feat-no" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Custom Branding</li>
-            <li><svg class="feat-no" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> PDF &amp; JPG Downloads</li>
-            <li><svg class="feat-no" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> UPI QR Code Payment</li>
-            <li><svg class="feat-no" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Analytics &amp; Directory</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 10 invoices/month</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Basic invoice features</li>
           </ul>
           <button class="btn btn-secondary plan-btn" id="btn-select-free" onclick="purchasePlan('free')">Current Plan</button>
         </div>
@@ -581,12 +576,12 @@
             <div class="plan-price">₹99<span>/year</span></div>
           </div>
           <ul class="plan-features">
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Unlimited</strong> Invoices</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Custom Branding (Logo &amp; Sig)</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> PDF / JPG Downloads</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> UPI Payment QR</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> WhatsApp Image Sharing</li>
-            <li><svg class="feat-no" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Analytics &amp; Reports</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Unlimited invoices</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> PDF Download</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> JPG Download</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> WhatsApp Sharing</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> QR Payments</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Business Branding</li>
           </ul>
           <button class="btn btn-primary plan-btn" id="btn-select-basic" onclick="purchasePlan('basic')">Upgrade Basic</button>
         </div>
@@ -598,15 +593,18 @@
             <div class="plan-price">₹299<span>/year</span></div>
           </div>
           <ul class="plan-features">
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Unlimited</strong> Invoices</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Custom Branding (Logo &amp; Sig)</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> PDF / JPG Downloads</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> UPI Payment QR &amp; WhatsApp</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Analytics Dashboard</strong></li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Customer Management</strong></li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Analytics Dashboard</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Customer Management</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Advanced Reports</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Premium Insights</li>
           </ul>
           <button class="btn btn-secondary plan-btn" id="btn-select-pro" onclick="purchasePlan('pro')">Upgrade Pro</button>
         </div>
+      </div>
+      
+      <!-- Skip Option -->
+      <div style="text-align: center; margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+        <button class="btn-link" style="color: var(--text-sec); font-size: 0.8rem; font-weight: 600; text-decoration: underline;" onclick="skipUpgrade()">Skip for now</button>
       </div>
     </div>
   </div>

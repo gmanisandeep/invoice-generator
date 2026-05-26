@@ -832,11 +832,11 @@ var adminSubFilter = 'all';
 var adminLoadedBusinesses = [];
 
 var MOCK_BUSINESSES = [
-  { name: 'Balaji Wholesalers', subscription: 'active', subEnd: '2027-02-15', activity: 'active', invoices: 142, revenue: 485900, consent: true },
-  { name: 'Sharma Groceries & Retail', subscription: 'active', subEnd: '2026-11-20', activity: 'active', invoices: 89, revenue: 154200, consent: true },
-  { name: 'Siddharth Organics Ltd.', subscription: 'expiring', subEnd: '2026-06-10', activity: 'active', invoices: 231, revenue: 1250000, consent: true },
-  { name: 'Deepak Retail Outlet', subscription: 'expired', subEnd: '2026-04-01', activity: 'inactive', invoices: 45, revenue: 87500, consent: false },
-  { name: 'Mani Enterprise Agency', subscription: 'expiring', subEnd: '2026-06-18', activity: 'active', invoices: 110, revenue: 320400, consent: true }
+  { name: 'Balaji Wholesalers', subscription: 'basic', subEnd: '2027-02-15', activity: 'active', invoices: 142, revenue: 485900, consent: true },
+  { name: 'Sharma Groceries & Retail', subscription: 'basic', subEnd: '2026-11-20', activity: 'active', invoices: 89, revenue: 154200, consent: true },
+  { name: 'Siddharth Organics Ltd.', subscription: 'pro', subEnd: '2026-06-10', activity: 'active', invoices: 231, revenue: 1250000, consent: true },
+  { name: 'Deepak Retail Outlet', subscription: 'free', subEnd: '2026-04-01', activity: 'inactive', invoices: 45, revenue: 87500, consent: false },
+  { name: 'Mani Enterprise Agency', subscription: 'pro', subEnd: '2026-06-18', activity: 'active', invoices: 110, revenue: 320400, consent: true }
 ];
 
 function renderAdminPortal() {
@@ -1010,27 +1010,32 @@ function renderAdminDashboard(businesses) {
   
   // Calculate Platform Analytics
   var totalRegistered = businesses.length;
-  var activeUsers = 0;
+  var freeUsers = 0;
+  var paidUsers = 0;
   var expiringSubs = 0;
-  var totalInvoices = 0;
-  var totalRevenue = 0;
+  var saasRevenue = 0;
   
   businesses.forEach(function(b) {
-    if (b.activity === 'active') activeUsers++;
-    if (b.subscription === 'expiring') expiringSubs++;
-    
-    if (b.consent) {
-      totalInvoices += b.invoices;
-      totalRevenue += b.revenue;
+    var sub = b.subscription ? b.subscription.toLowerCase() : 'free';
+    if (sub === 'free') {
+      freeUsers++;
+    } else if (sub === 'basic') {
+      paidUsers++;
+      saasRevenue += 99;
+    } else if (sub === 'pro') {
+      paidUsers++;
+      saasRevenue += 299;
     }
+    
+    if (b.subscriptionStatus === 'expiring' || b.subscription === 'expiring') expiringSubs++;
   });
   
   // Update Platform UI
   document.getElementById('ad-total-businesses').textContent = totalRegistered;
-  document.getElementById('ad-active-users').textContent = activeUsers;
+  document.getElementById('ad-free-users').textContent = freeUsers;
+  document.getElementById('ad-paid-users').textContent = paidUsers;
   document.getElementById('ad-expiring-subs').textContent = expiringSubs;
-  document.getElementById('ad-total-invoices').textContent = totalInvoices;
-  document.getElementById('ad-total-revenue').textContent = formatINR(totalRevenue);
+  document.getElementById('ad-total-revenue').textContent = formatINR(saasRevenue);
   
   // Render Business Insights Table
   var tbody = document.getElementById('admin-table-body');
@@ -1242,6 +1247,12 @@ function handleLoggedInState() {
   setNextInvoiceNumber();
   setTodayDate();
   recalculate();
+  
+  if (currentUser && currentUser.planType === 'free' && !sessionStorage.getItem('billblue_modal_skipped') && !isAdmin) {
+    setTimeout(function() {
+      openUpgradeModal();
+    }, 1000);
+  }
 }
 
 function handleLoggedOutState() {
@@ -1309,7 +1320,7 @@ function handleRegister() {
   var company = getVal('register-company');
   var email = getVal('register-email');
   var password = getVal('register-password');
-  var plan = document.getElementById('register-plan').value;
+  var plan = 'free';
   
   if (!company || !email || !password) {
     showToast('Please fill all fields', 'error');
@@ -1571,6 +1582,13 @@ function openUpgradeModal() {
 function closeUpgradeModal() {
   var modal = document.getElementById('upgrade-modal');
   if (modal) modal.style.display = 'none';
+  sessionStorage.setItem('billblue_modal_skipped', 'true');
+}
+
+function skipUpgrade() {
+  sessionStorage.setItem('billblue_modal_skipped', 'true');
+  closeUpgradeModal();
+  showToast('Logged in on Free Tier!', 'info');
 }
 
 function purchasePlan(plan) {
@@ -1580,22 +1598,75 @@ function purchasePlan(plan) {
     return;
   }
   
+  if (plan === 'free') {
+    processPlanUpgrade('free');
+    return;
+  }
+  
+  var planPrice = plan === 'basic' ? 99 : 299;
+  var planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
+  
+  showToast('Opening Razorpay Payment Checkout...', 'info');
+  
+  // Razorpay Checkout Integration
+  if (typeof Razorpay !== 'undefined') {
+    var options = {
+      "key": "rzp_test_5g6h7i8j9k0l1m",
+      "amount": planPrice * 100, // paise
+      "currency": "INR",
+      "name": "Bill Blue",
+      "description": planLabel + " Subscription Plan Upgrade",
+      "handler": function (response) {
+        processPlanUpgrade(plan);
+        showToast('Payment successful! Transaction ID: ' + response.razorpay_payment_id, 'success');
+      },
+      "prefill": {
+        "email": currentUser.email || ""
+      },
+      "theme": {
+        "color": "#1e40af"
+      }
+    };
+    var rzp = new Razorpay(options);
+    rzp.on('payment.failed', function (response){
+      showToast('Payment failed: ' + response.error.description, 'error');
+    });
+    rzp.open();
+  } else {
+    // Fallback Mock checkout for testing locally / offline
+    var confirmPay = confirm('Razorpay Payment Gateway Mock:\n\nPay ₹' + planPrice + ' for ' + planLabel + ' Plan?\n\n(Click OK to simulate successful transaction)');
+    if (confirmPay) {
+      processPlanUpgrade(plan);
+    } else {
+      showToast('Payment cancelled', 'info');
+    }
+  }
+}
+
+function processPlanUpgrade(plan) {
   showToast('Upgrading plan to ' + plan.toUpperCase() + '...', '');
-  var expiry = '2027-05-25';
+  var d = new Date();
+  d.setFullYear(d.getFullYear() + 1);
+  var expiry = dateStr(d);
+  
+  var subscriptionData = {
+    planType: plan,
+    subscriptionStatus: plan === 'free' ? 'inactive' : 'active',
+    subscriptionExpiry: expiry
+  };
   
   if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
-    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid).update({
-      planType: plan,
-      subscriptionExpiry: expiry
-    }).then(function() {
-      currentUser.planType = plan;
-      currentUser.subscriptionExpiry = expiry;
-      handleLoggedInState();
-      closeUpgradeModal();
-      showToast('Plan upgraded successfully!', 'success');
-    }).catch(function(err) {
-      showToast('Upgrade failed: ' + err.message, 'error');
-    });
+    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid).update(subscriptionData)
+      .then(function() {
+        currentUser.planType = plan;
+        currentUser.subscriptionStatus = subscriptionData.subscriptionStatus;
+        currentUser.subscriptionExpiry = expiry;
+        handleLoggedInState();
+        closeUpgradeModal();
+        showToast('Subscription upgraded to ' + plan.toUpperCase() + '!', 'success');
+      }).catch(function(err) {
+        showToast('Upgrade failed: ' + err.message, 'error');
+      });
     return;
   }
   
@@ -1603,16 +1674,18 @@ function purchasePlan(plan) {
   var email = currentUser.email.toLowerCase();
   if (users[email]) {
     users[email].planType = plan;
+    users[email].subscriptionStatus = subscriptionData.subscriptionStatus;
     users[email].subscriptionExpiry = expiry;
     saveData('billblue_simulated_users', users);
   }
   
   currentUser.planType = plan;
+  currentUser.subscriptionStatus = subscriptionData.subscriptionStatus;
   currentUser.subscriptionExpiry = expiry;
   saveData('billblue_current_user', currentUser);
   handleLoggedInState();
   closeUpgradeModal();
-  showToast('Plan upgraded successfully (Sandbox)!', 'success');
+  showToast('Subscription upgraded to ' + plan.toUpperCase() + ' (Sandbox)!', 'success');
 }
 
 // ═══════════════════════════════════════════
