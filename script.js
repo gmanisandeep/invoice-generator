@@ -285,6 +285,12 @@ function updateQRCode(amount) {
   
   var p = loadData(KEYS.BUSINESS);
   if (!p || !p.upi) return;
+  
+  if (typeof QRCode === 'undefined') {
+    c.innerHTML = '<div style="font-size:0.6rem; color:var(--text-muted); text-align:center; padding:12px 5px; border:1px dashed var(--border); border-radius:3px; background:var(--bg-warm); line-height:1.3;">QR Library Offline</div>';
+    return;
+  }
+  
   var upi = 'upi://pay?pa=' + encodeURIComponent(p.upi) + '&pn=' + encodeURIComponent(p.name||'Business') + '&am=' + (amount||0).toFixed(2) + '&cu=INR';
   c.innerHTML = '';
   try { qrInstance = new QRCode(c, { text:upi, width:100, height:100, colorDark:'#111827', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M }); } catch(e) {}
@@ -633,6 +639,10 @@ function printInvoice() {
 //  CAPTURE HELPERS (PDF/JPG)
 // ═══════════════════════════════════════════
 function captureSheet() {
+  if (typeof html2canvas === 'undefined') {
+    showToast('HTML capture library offline', 'error');
+    return Promise.reject(new Error('html2canvas offline'));
+  }
   var sheet = document.getElementById('invoice-sheet');
   sheet.classList.add('capture-mode');
   return html2canvas(sheet, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(function(canvas) {
@@ -646,6 +656,10 @@ function captureSheet() {
 
 function downloadPDF() {
   if (!checkFeatureAccess('exports')) return;
+  if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
+    showToast('PDF generator library offline', 'error');
+    return;
+  }
   showToast('Generating PDF…', '');
   captureSheet().then(function(canvas) {
     var img = canvas.toDataURL('image/jpeg', 0.92);
@@ -917,7 +931,7 @@ function getFirebaseConfig() {
 
 function initializeFirebase() {
   var config = getFirebaseConfig();
-  if (config) {
+  if (config && typeof firebase !== 'undefined') {
     try {
       if (!firebase.apps.length) {
         firebaseApp = firebase.initializeApp(config);
