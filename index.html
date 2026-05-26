@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="InvoiceFlow — Professional Indian GST Invoice Generator for small businesses.">
+  <title>InvoiceFlow — GST Invoice Generator</title>
+  <!-- High Performance CDN Prefetching -->
+  <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  <link rel="dns-prefetch" href="https://www.gstatic.com">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <!-- PWA & Mobile Web App Settings -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e40af">
+  
+  <!-- Apple iOS Mobile App Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="InvoiceFlow">
+  <link rel="apple-touch-icon" href="assets/logo.svg">
+  
+  <!-- Favicon -->
+  <link rel="shortcut icon" href="assets/logo.svg" type="image/svg+xml">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Mobile Top Header Bar -->
+  <header class="mobile-header" id="mobile-header" style="display:none">
+    <div class="mh-brand">
+      <div class="mh-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <span class="mh-title">InvoiceFlow</span>
+    </div>
+    <div class="mh-right">
+      <span class="mh-badge" id="mh-plan-badge" onclick="openUpgradeModal()">Free Plan</span>
+      <div class="mh-avatar" id="mh-avatar" onclick="navigateTo('settings')">US</div>
+    </div>
+  </header>
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <span class="brand-text">InvoiceFlow</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-view="dashboard" onclick="navigateTo('dashboard')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <a class="nav-item" data-view="invoice" onclick="navigateTo('invoice')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        <span>New Invoice</span>
+      </a>
+      <a class="nav-item" data-view="history" onclick="navigateTo('history')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>History</span>
+      </a>
+      <a class="nav-item" data-view="settings" onclick="navigateTo('settings')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Settings</span>
+      </a>
+      <a class="nav-item nav-item-admin" data-view="admin" onclick="navigateTo('admin')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Admin Portal</span>
+      </a>
+    </nav>
+    
+    <div class="sidebar-user-card" id="sidebar-user-panel" style="display:none">
+      <div class="user-avatar" id="user-avatar-initials">US</div>
+      <div class="user-info">
+        <span class="user-name" id="user-display-email">user@email.com</span>
+        <span class="user-plan-badge" id="user-plan-badge" onclick="openUpgradeModal()">Free Plan</span>
+      </div>
+      <button class="btn-logout-icon" onclick="triggerSignOut()" title="Sign Out">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+    
+    <div class="sidebar-footer"><p>&copy; 2026 InvoiceFlow</p></div>
+  </aside>
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <div class="main-wrap" id="main-wrap">
+
+    <!-- ════════ VIEW: AUTH (LOGIN / REGISTER) ════════ -->
+    <section id="view-auth" class="view active-view">
+      <div class="auth-container">
+        <div class="auth-card" id="auth-login-card">
+          <div class="auth-header">
+            <div class="auth-brand-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <h1 class="auth-title">InvoiceFlow</h1>
+            <p class="auth-subtitle">Sign in to manage invoices &amp; business billing</p>
+          </div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label>Email Address</label>
+            <input type="email" id="login-email" placeholder="name@company.com">
+          </div>
+          <div class="form-group" style="margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+              <label style="margin-bottom:0;">Password</label>
+              <a href="#" class="auth-link" style="font-size: 0.7rem;" onclick="showAuthCard('forgot')">Forgot?</a>
+            </div>
+            <input type="password" id="login-password" placeholder="••••••••">
+          </div>
+          <button class="btn btn-primary btn-auth" style="width:100%; justify-content:center; height:38px;" onclick="handleLogin()">Sign In</button>
+          <div class="auth-footer-text">
+            Don't have an account? <a href="#" class="auth-link" onclick="showAuthCard('register')">Register</a>
+          </div>
+        </div>
+
+        <div class="auth-card" id="auth-register-card" style="display:none">
+          <div class="auth-header">
+            <div class="auth-brand-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Start professional invoicing in seconds</p>
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label>Business / Company Name</label>
+            <input type="text" id="register-company" placeholder="e.g. Balaji Wholesalers">
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label>Email Address</label>
+            <input type="email" id="register-email" placeholder="name@company.com">
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label>Password</label>
+            <input type="password" id="register-password" placeholder="Min 6 characters">
+          </div>
+          <div class="form-group" style="margin-bottom:16px;">
+            <label>Select Initial Plan</label>
+            <select id="register-plan" class="inv-select" style="margin-top: 4px; background: var(--bg-warm);">
+              <option value="free">Free Tier (10 invoices/mo)</option>
+              <option value="basic">Basic Plan (₹99/year)</option>
+              <option value="pro">Pro Plan (₹299/year)</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-auth" style="width:100%; justify-content:center; height:38px;" onclick="handleRegister()">Create Account</button>
+          <div class="auth-footer-text">
+            Already registered? <a href="#" class="auth-link" onclick="showAuthCard('login')">Sign In</a>
+          </div>
+        </div>
+
+        <div class="auth-card" id="auth-forgot-card" style="display:none">
+          <div class="auth-header">
+            <div class="auth-brand-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h1 class="auth-title">Reset Password</h1>
+            <p class="auth-subtitle">Enter your email to receive a recovery link</p>
+          </div>
+          <div class="form-group" style="margin-bottom:16px;">
+            <label>Email Address</label>
+            <input type="email" id="forgot-email" placeholder="name@company.com">
+          </div>
+          <button class="btn btn-primary btn-auth" style="width:100%; justify-content:center; height:38px;" onclick="handleForgotPassword()">Send Reset Link</button>
+          <div class="auth-footer-text" style="margin-top:16px;">
+            Back to <a href="#" class="auth-link" onclick="showAuthCard('login')">Sign In</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ VIEW: DASHBOARD ════════ -->
+    <section id="view-dashboard" class="view active-view" style="position:relative">
+      <div class="view-header">
+        <div><h1 class="view-title">Dashboard</h1><p class="view-subtitle">Business analytics overview</p></div>
+        <button class="btn btn-primary" onclick="navigateTo('invoice')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Invoice
+        </button>
+      </div>
+
+      <!-- Pro paywall overlay -->
+      <div class="paywall-overlay" id="dashboard-paywall" style="display:none">
+        <div class="paywall-card">
+          <div class="paywall-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+          </div>
+          <h2 class="paywall-title">Unlock Premium Analytics</h2>
+          <p class="paywall-subtitle">Interactive business revenue charts, customer analytics, and product insights require the <strong>Pro Plan</strong> (₹299/year).</p>
+          <button class="btn btn-primary" onclick="openUpgradeModal()">Upgrade to Pro</button>
+        </div>
+      </div>
+
+      <div class="dashboard-restricted-wrapper" id="dashboard-wrapper">
+        <!-- Filters -->
+        <div class="filter-bar">
+          <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">All Time</button>
+          <button class="filter-btn" data-filter="today" onclick="setFilter('today',this)">Today</button>
+          <button class="filter-btn" data-filter="week" onclick="setFilter('week',this)">This Week</button>
+          <button class="filter-btn" data-filter="month" onclick="setFilter('month',this)">This Month</button>
+          <button class="filter-btn" data-filter="year" onclick="setFilter('year',this)">This Year</button>
+        </div>
+        <!-- Stats -->
+        <div class="stats-grid-4">
+          <div class="stat-card"><div class="stat-icon si-blue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-content"><span class="stat-value" id="d-revenue">₹0</span><span class="stat-label">Revenue</span></div></div>
+          <div class="stat-card"><div class="stat-icon si-green"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-content"><span class="stat-value" id="d-today">₹0</span><span class="stat-label">Today Revenue</span></div></div>
+          <div class="stat-card"><div class="stat-icon si-cyan"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-content"><span class="stat-value" id="d-monthly">₹0</span><span class="stat-label">Monthly Revenue</span></div></div>
+          <div class="stat-card"><div class="stat-icon si-indigo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="stat-content"><span class="stat-value" id="d-total-inv">0</span><span class="stat-label">Total Invoices</span></div></div>
+          <div class="stat-card"><div class="stat-icon si-green"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div class="stat-content"><span class="stat-value" id="d-paid">0</span><span class="stat-label">Paid</span></div></div>
+          <div class="stat-card"><div class="stat-icon si-amber"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-content"><span class="stat-value" id="d-pending">0</span><span class="stat-label">Pending</span></div></div>
+          <div class="stat-card"><div class="stat-icon si-purple"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="stat-content"><span class="stat-value" id="d-customers">0</span><span class="stat-label">Customers</span></div></div>
+          <div class="stat-card"><div class="stat-icon si-rose"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div><div class="stat-content"><span class="stat-value" id="d-top-product">—</span><span class="stat-label">Top Product</span></div></div>
+        </div>
+        <!-- Charts -->
+        <div class="charts-grid">
+          <div class="chart-card"><h3 class="chart-title">Monthly Revenue</h3><div class="chart-wrap"><canvas id="chart-revenue"></canvas></div></div>
+          <div class="chart-card"><h3 class="chart-title">Invoice Count</h3><div class="chart-wrap"><canvas id="chart-invoices"></canvas></div></div>
+          <div class="chart-card chart-card-full"><h3 class="chart-title">Top Selling Products</h3><div class="chart-wrap chart-wrap-sm"><canvas id="chart-products"></canvas></div></div>
+        </div>
+        <!-- Recent Invoices -->
+        <div class="card">
+          <h3 class="card-title">Recent Invoices</h3>
+          <div class="table-wrap">
+            <table class="data-table" id="dash-table"><thead><tr><th>Invoice #</th><th>Customer</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody id="dash-body"></tbody></table>
+          </div>
+          <div class="empty-state" id="dash-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><p>No invoices yet</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ VIEW: INVOICE ════════ -->
+    <section id="view-invoice" class="view">
+      <div class="view-header">
+        <div><h1 class="view-title" id="invoice-view-title">New Invoice</h1></div>
+      </div>
+
+      <!-- Swipe Helper Banner for mobile -->
+      <div class="swipe-hint-banner" id="swipe-hint-banner" style="display:none">
+        <span class="swipe-hint-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        </span>
+        <span class="swipe-hint-text">Drag invoice horizontally to edit full A4 sheet</span>
+        <button class="swipe-hint-close" onclick="dismissSwipeHint()" title="Dismiss">&times;</button>
+      </div>
+
+      <!-- Scroll Wrapper for pixel-perfect mobile editing -->
+      <div class="invoice-scroll-wrap">
+        <div class="invoice-sheet" id="invoice-sheet">
+        <!-- Business Header -->
+        <div class="inv-header">
+          <div class="inv-logo-area" id="inv-logo-area" style="display:none"><img id="inv-logo" src="" alt="Logo"></div>
+          <div class="inv-business-info">
+            <h2 class="inv-business-name" id="inv-business-name">Your Business Name</h2>
+            <p class="inv-gst-line" id="inv-gst-line" style="display:none">GSTIN: <strong id="inv-gst"></strong></p>
+            <p class="inv-contact-line"><span id="inv-business-phone"></span><span id="inv-business-email"></span></p>
+            <p id="inv-business-address" class="inv-address-line"></p>
+          </div>
+        </div>
+        <!-- Title Bar -->
+        <div class="inv-title-bar">TAX INVOICE</div>
+        <!-- Meta + Customer -->
+        <div class="inv-meta-customer">
+          <div class="inv-customer-block">
+            <h3 class="inv-section-label">Bill To</h3>
+            <input type="text" id="customer-name" class="inv-input inv-input-bold" placeholder="Customer Name">
+            <input type="tel" id="customer-phone" class="inv-input" placeholder="Phone Number">
+            <textarea id="customer-address" class="inv-input" placeholder="Address" rows="2"></textarea>
+          </div>
+          <div class="inv-meta-block">
+            <div class="inv-meta-row"><span class="inv-meta-label">Invoice No.</span><input type="text" id="invoice-number" class="inv-input inv-meta-value" readonly></div>
+            <div class="inv-meta-row"><span class="inv-meta-label">Date</span><input type="date" id="invoice-date" class="inv-input inv-meta-value"></div>
+            <div class="inv-meta-row"><span class="inv-meta-label">Status</span><select id="invoice-status" class="inv-input inv-meta-value inv-select"><option value="pending">Pending</option><option value="paid">Paid</option></select></div>
+          </div>
+        </div>
+        <!-- Items Table -->
+        <table class="inv-table" id="items-table">
+          <thead><tr>
+            <th class="col-sno">S.No</th><th class="col-item">Item Name</th><th class="col-hsn">HSN/SAC</th><th class="col-qty">Qty</th><th class="col-unit">Unit</th><th class="col-rate">Rate (₹)</th><th class="col-amount">Amount (₹)</th><th class="col-action no-print"></th>
+          </tr></thead>
+          <tbody id="items-body"></tbody>
+        </table>
+        <button class="btn-add-row no-print" id="btn-add-item" onclick="addItemRow()">+ Add Item</button>
+        <!-- Totals -->
+        <div class="inv-totals">
+          <table class="totals-table">
+            <tr class="totals-tr"><td class="totals-label">Subtotal</td><td class="totals-value" id="subtotal">₹0.00</td></tr>
+            <tr class="totals-tr tax-row" id="tax-row" style="display:none"><td class="totals-label">Tax <span class="no-print tax-input-wrap">(<input type="number" id="tax-rate" value="18" min="0" max="100" step="0.5" onchange="recalculate()" oninput="recalculate()">%)</span><span class="print-only tax-print-pct"></span></td><td class="totals-value" id="tax-amount">₹0.00</td></tr>
+            <tr class="totals-tr"><td class="totals-label">Previous Balance</td><td class="totals-value totals-editable" id="prev-balance-display" onclick="editTotalField('prev-balance')" title="Click to edit">₹0.00</td></tr>
+            <tr class="totals-tr totals-grand"><td class="totals-label">Grand Total</td><td class="totals-value" id="grand-total">₹0.00</td></tr>
+            <tr class="totals-tr"><td class="totals-label">Received</td><td class="totals-value totals-editable" id="received-display" onclick="editTotalField('received')" title="Click to edit">₹0.00</td></tr>
+            <tr class="totals-tr totals-due"><td class="totals-label">Balance Due</td><td class="totals-value" id="balance-due">₹0.00</td></tr>
+          </table>
+          <input type="hidden" id="prev-balance" value="0">
+          <input type="hidden" id="received-amount" value="0">
+          <div class="tax-toggle-wrap no-print"><label class="toggle-label"><input type="checkbox" id="tax-toggle" onchange="toggleTax()"> Include Tax</label></div>
+        </div>
+        <!-- Amount In Words -->
+        <div class="inv-words"><strong>In Words:</strong> <span id="amount-words">Zero Rupees Only</span></div>
+        <!-- Bank + QR -->
+        <div class="inv-payment" id="inv-payment-section" style="display:none">
+          <div class="inv-bank">
+            <h3 class="inv-section-label">Bank Details</h3>
+            <table class="inv-bank-table">
+              <tr><td>Bank Name</td><td id="inv-bank-name">—</td></tr>
+              <tr><td>A/C Holder</td><td id="inv-account-holder">—</td></tr>
+              <tr><td>A/C Number</td><td id="inv-account-number">—</td></tr>
+              <tr><td>IFSC Code</td><td id="inv-ifsc">—</td></tr>
+              <tr><td>UPI ID</td><td id="inv-upi">—</td></tr>
+            </table>
+          </div>
+          <div class="inv-qr"><div id="qr-code"></div><p class="inv-qr-label">Scan &amp; Pay</p></div>
+        </div>
+        <!-- Terms + Signature -->
+        <div class="inv-footer-section">
+          <div class="inv-terms" id="inv-terms-block" style="display:none"><h3 class="inv-section-label">Terms &amp; Conditions</h3><p id="inv-terms-text"></p></div>
+          <div class="inv-signature" id="inv-signature-block">
+            <div class="inv-sig-img-wrap" id="inv-sig-wrap" style="display:none"><img id="inv-signature-img" src="" alt="Signature"></div>
+            <p class="inv-sig-label">Authorized Signatory</p>
+          </div>
+        </div>
+        <div class="inv-generated">Computer Generated Invoice</div>
+      </div>
+    </div><!-- /invoice-scroll-wrap -->
+
+      <!-- Actions -->
+      <div class="invoice-actions no-print">
+        <button class="btn btn-save" onclick="saveInvoice()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save</button>
+        <button class="btn btn-pdf" onclick="downloadPDF()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> PDF</button>
+        <button class="btn btn-jpg" onclick="downloadJPG()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> JPG</button>
+        <button class="btn btn-print" onclick="printInvoice()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</button>
+        <button class="btn btn-whatsapp" onclick="shareWhatsApp()"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg> WhatsApp</button>
+        <button class="btn btn-clear" onclick="clearInvoice()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> New</button>
+      </div>
+    </section>
+
+    <!-- ════════ VIEW: HISTORY ════════ -->
+    <section id="view-history" class="view">
+      <div class="view-header">
+        <div><h1 class="view-title">Invoice History</h1></div>
+        <button class="btn btn-primary" onclick="navigateTo('invoice')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New Invoice</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="data-table" id="history-table"><thead><tr><th>Invoice #</th><th>Customer</th><th>Date</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="history-body"></tbody></table>
+        </div>
+        <div class="empty-state" id="history-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><p>No invoices saved yet</p></div>
+      </div>
+    </section>
+
+    <!-- ════════ VIEW: SETTINGS ════════ -->
+    <section id="view-settings" class="view">
+      <div class="view-header"><div><h1 class="view-title">Business Settings</h1></div></div>
+      
+      <!-- Subscription Plan Banner Card -->
+      <div class="card" id="pricing-banner-card" style="border:1px solid #bfdbfe; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h3 class="card-title" style="margin-bottom:2px; color: var(--primary-dark);">Subscription Details</h3>
+            <p style="font-size:0.75rem; color:var(--text-sec); margin:0;">Your business is currently operating on the <strong id="settings-plan-name" style="color: var(--primary); text-transform: uppercase;">Free Plan</strong>.</p>
+            <p id="settings-expiry-text" style="font-size:0.65rem; color:var(--text-muted); margin-top:2px; display:none;">Renews on: 12th Dec 2026</p>
+          </div>
+          <button class="btn btn-primary" onclick="openUpgradeModal()">Manage / Upgrade Subscription</button>
+        </div>
+      </div>
+
+      <!-- PWA Installation Manager Card -->
+      <div class="card" id="pwa-install-card" style="border:1px solid #c7d2fe; background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h3 class="card-title" style="margin-bottom:2px; color: #4c1d95;">InvoiceFlow Mobile App</h3>
+            <p id="pwa-install-desc" style="font-size:0.75rem; color:#5b21b6; margin:0;">Install this app on your device for standalone window editing and offline capabilities!</p>
+          </div>
+          <button class="btn" id="btn-pwa-install" onclick="triggerPWAInstall()" style="background:#7c3aed; color:#fff; border:none; border-radius:var(--radius-sm); font-size:0.75rem; font-weight:600; padding:8px 16px; cursor:pointer; box-shadow:0 2px 6px rgba(124,58,237,0.25);">Install App</button>
+        </div>
+      </div>
+
+      <div class="card"><h2 class="card-title">Business Information</h2>
+        <div class="form-grid">
+          <div class="form-group"><label>Business Name</label><input type="text" id="settings-name" placeholder="Your Business Name"></div>
+          <div class="form-group"><label>GST Number</label><input type="text" id="settings-gst" placeholder="e.g. 22AAAAA0000A1Z5"></div>
+          <div class="form-group"><label>Phone</label><input type="tel" id="settings-phone" placeholder="+91 98765 43210"></div>
+          <div class="form-group"><label>Email</label><input type="email" id="settings-email" placeholder="info@business.com"></div>
+          <div class="form-group"><label>State</label><select id="settings-state"><option value="">Select State</option><option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Goa</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option><option>Delhi</option><option>Jammu & Kashmir</option><option>Ladakh</option><option>Chandigarh</option><option>Puducherry</option></select></div>
+          <div class="form-group form-group-full"><label>Address</label><textarea id="settings-address" placeholder="Full Business Address" rows="2"></textarea></div>
+        </div>
+      </div>
+      <div class="card"><h2 class="card-title">Logo &amp; Signature</h2>
+        <div class="upload-grid">
+          <div class="upload-zone" onclick="handleBrandingClick('settings-logo-input')"><input type="file" id="settings-logo-input" accept="image/*" onchange="handleLogoUpload(event)" hidden><div id="logo-placeholder" class="upload-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><p>Upload Logo</p><span>PNG, JPG (max 2MB)</span></div><img id="settings-logo-img" src="" alt="Logo" style="display:none"></div>
+          <div class="upload-zone" onclick="handleBrandingClick('settings-sig-input')"><input type="file" id="settings-sig-input" accept="image/*" onchange="handleSignatureUpload(event)" hidden><div id="sig-placeholder" class="upload-placeholder"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg><p>Upload Signature</p><span>PNG, JPG (max 2MB)</span></div><img id="settings-sig-img" src="" alt="Signature" style="display:none"></div>
+        </div>
+      </div>
+      <div class="card"><h2 class="card-title">Payment Details</h2>
+        <div class="form-grid">
+          <div class="form-group"><label>Bank Name</label><input type="text" id="settings-bank" placeholder="State Bank of India"></div>
+          <div class="form-group"><label>Account Holder Name</label><input type="text" id="settings-acc-holder" placeholder="Account Holder"></div>
+          <div class="form-group"><label>Account Number</label><input type="text" id="settings-acc-number" placeholder="1234567890"></div>
+          <div class="form-group"><label>IFSC Code</label><input type="text" id="settings-ifsc" placeholder="SBIN0001234"></div>
+          <div class="form-group form-group-full"><label>UPI ID</label><input type="text" id="settings-upi" placeholder="business@upi"></div>
+        </div>
+      </div>
+      <div class="card"><h2 class="card-title">Terms &amp; Conditions</h2>
+        <textarea id="settings-terms" class="full-textarea" placeholder="1. Goods once sold will not be taken back.&#10;2. Payment due within 30 days." rows="3"></textarea>
+      </div>
+      <div class="card"><h2 class="card-title">Privacy &amp; Analytics</h2>
+        <div class="consent-group">
+          <label class="toggle-label-large">
+            <input type="checkbox" id="settings-consent" checked>
+            <span>Allow business analytics for service improvement</span>
+          </label>
+          <p class="toggle-help-text">Sharing dynamic invoice counts and aggregated transaction analytics helps platform admins improve overall system performance and diagnostic reporting. If disabled, transaction details remain private and restricted from platform dashboards.</p>
+        </div>
+      </div>
+      <div class="card"><h2 class="card-title">Firebase Cloud Integration</h2>
+        <p style="font-size:0.7rem; color:var(--text-sec); margin-bottom:8px; line-height:1.4;">Paste your Firebase Web Config JSON below to sync data securely to your Firebase Auth &amp; Firestore cloud instance. Leaving it blank maintains local sandbox mode.</p>
+        <textarea id="settings-firebase-config" class="full-textarea" placeholder='{ "apiKey": "...", "authDomain": "...", "projectId": "..." }' rows="3"></textarea>
+      </div>
+      <div class="form-actions"><button class="btn btn-primary" onclick="saveBusinessProfile()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Settings</button></div>
+    </section>
+
+    <!-- ════════ VIEW: ADMIN PORTAL ════════ -->
+    <section id="view-admin" class="view">
+      <!-- Login Gate -->
+      <div class="admin-login-container" id="admin-login-gate">
+        <div class="admin-login-card">
+          <div class="admin-login-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h2 class="admin-login-title">Secure Admin Portal</h2>
+          <p class="admin-login-subtitle">Enter passcode to access platform owner analytics</p>
+          <div class="form-group" style="margin: 16px 0;">
+            <input type="password" id="admin-passcode" placeholder="Enter passcode (try admin123)" onkeydown="if(event.key==='Enter') verifyAdminPasscode()">
+          </div>
+          <button class="btn btn-primary" style="width: 100%; justify-content: center; height: 38px;" onclick="verifyAdminPasscode()">Access Dashboard</button>
+          <p class="admin-login-error" id="admin-login-err" style="display:none; color: var(--danger); font-size: 0.72rem; font-weight: 600; margin-top: 10px; text-align: center;">Incorrect passcode. Please try again.</p>
+        </div>
+      </div>
+
+      <!-- Admin Dashboard (Initially Hidden) -->
+      <div class="admin-dashboard-content" id="admin-dashboard-panel" style="display:none">
+        <div class="view-header">
+          <div>
+            <h1 class="view-title">Owner Admin Dashboard</h1>
+            <p class="view-subtitle">Platform-wide insights and multi-tenant performance analytics</p>
+          </div>
+          <button class="btn btn-danger-ghost" onclick="logoutAdminPortal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Log Out
+          </button>
+        </div>
+
+        <!-- Platform Analytics Cards -->
+        <h2 class="section-heading" style="margin-top: 16px;">Platform Analytics</h2>
+        <div class="stats-grid-4">
+          <div class="stat-card">
+            <div class="stat-icon si-indigo">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="ad-total-businesses">0</span>
+              <span class="stat-label">Total Businesses</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon si-green">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="ad-active-users">0</span>
+              <span class="stat-label">Active Users</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon si-amber">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="ad-expiring-subs">0</span>
+              <span class="stat-label">Expiring Subs (30d)</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon si-cyan">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="ad-total-invoices">0</span>
+              <span class="stat-label">Platform Invoices</span>
+            </div>
+          </div>
+          <div class="stat-card stat-card-full-wide">
+            <div class="stat-icon si-blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="ad-total-revenue">₹0.00</span>
+              <span class="stat-label">Total Platform Revenue Processed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Business Insights Section -->
+        <div class="admin-insights-header" style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+          <h2 class="section-heading" style="margin: 0;">Business Insights</h2>
+          <div class="filter-bar" style="margin: 0; padding: 0; border: none; background: none;">
+            <button class="filter-btn active" id="btn-sub-all" onclick="setAdminSubFilter('all', this)">All Subs</button>
+            <button class="filter-btn" id="btn-sub-active" onclick="setAdminSubFilter('active', this)">Active</button>
+            <button class="filter-btn" id="btn-sub-expiring" onclick="setAdminSubFilter('expiring', this)">Expiring</button>
+            <button class="filter-btn" id="btn-sub-expired" onclick="setAdminSubFilter('expired', this)">Expired</button>
+          </div>
+        </div>
+
+        <div class="card table-card" style="padding: 0; overflow-x: auto;">
+          <table class="data-table" id="admin-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: var(--bg-warm); border-bottom: 1.5px solid var(--border);">
+                <th style="padding: 10px 12px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; text-align: left; letter-spacing: 0.05em; color: var(--text-sec);">Business Name</th>
+                <th style="padding: 10px 12px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; text-align: left; letter-spacing: 0.05em; color: var(--text-sec);">Subscription</th>
+                <th style="padding: 10px 12px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; text-align: left; letter-spacing: 0.05em; color: var(--text-sec);">Activity</th>
+                <th style="padding: 10px 12px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; text-align: center; letter-spacing: 0.05em; color: var(--text-sec);">Invoices</th>
+                <th style="padding: 10px 12px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; text-align: right; letter-spacing: 0.05em; color: var(--text-sec);">Total Revenue</th>
+                <th style="padding: 10px 12px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; text-align: center; letter-spacing: 0.05em; color: var(--text-sec);">Consent</th>
+              </tr>
+            </thead>
+            <tbody id="admin-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Mobile Nav -->
+  <nav class="mobile-nav" id="mobile-nav">
+    <a class="mobile-nav-item active" data-view="dashboard" onclick="navigateTo('dashboard')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Home</span></a>
+    <a class="mobile-nav-item" data-view="invoice" onclick="navigateTo('invoice')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>Invoice</span></a>
+    <a class="mobile-nav-item" data-view="history" onclick="navigateTo('history')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>History</span></a>
+    <a class="mobile-nav-item" data-view="settings" onclick="navigateTo('settings')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+    <a class="mobile-nav-item mobile-nav-admin" data-view="admin" onclick="navigateTo('admin')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Admin</span></a>
+  </nav>
+
+  <div id="toast-container"></div>
+
+  <!-- ════════ SUBSCRIPTION UPGRADE MODAL ════════ -->
+  <div class="modal-backdrop" id="upgrade-modal" style="display:none">
+    <div class="upgrade-modal-card">
+      <div class="upgrade-modal-header">
+        <h2 class="upgrade-modal-title">Upgrade Your Subscription Plan</h2>
+        <p class="upgrade-modal-subtitle">Select the perfect subscription tier to supercharge your business</p>
+        <button class="btn-modal-close" onclick="closeUpgradeModal()">&times;</button>
+      </div>
+      <div class="pricing-grid">
+        <!-- Free Plan -->
+        <div class="pricing-card" id="price-card-free">
+          <div class="plan-header">
+            <span class="plan-name">Free Plan</span>
+            <div class="plan-price">₹0<span>/month</span></div>
+          </div>
+          <ul class="plan-features">
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 10 Invoices / month</li>
+            <li><svg class="feat-no" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Custom Branding</li>
+            <li><svg class="feat-no" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> PDF &amp; JPG Downloads</li>
+            <li><svg class="feat-no" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> UPI QR Code Payment</li>
+            <li><svg class="feat-no" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Analytics &amp; Directory</li>
+          </ul>
+          <button class="btn btn-secondary plan-btn" id="btn-select-free" onclick="purchasePlan('free')">Current Plan</button>
+        </div>
+        
+        <!-- Basic Plan -->
+        <div class="pricing-card pricing-card-featured" id="price-card-basic">
+          <div class="plan-header">
+            <span class="plan-name">Basic Plan</span>
+            <div class="plan-price">₹99<span>/year</span></div>
+          </div>
+          <ul class="plan-features">
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Unlimited</strong> Invoices</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Custom Branding (Logo &amp; Sig)</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> PDF / JPG Downloads</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> UPI Payment QR</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> WhatsApp Image Sharing</li>
+            <li><svg class="feat-no" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Analytics &amp; Reports</li>
+          </ul>
+          <button class="btn btn-primary plan-btn" id="btn-select-basic" onclick="purchasePlan('basic')">Upgrade Basic</button>
+        </div>
+        
+        <!-- Pro Plan -->
+        <div class="pricing-card" id="price-card-pro">
+          <div class="plan-header">
+            <span class="plan-name">Pro Plan</span>
+            <div class="plan-price">₹299<span>/year</span></div>
+          </div>
+          <ul class="plan-features">
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Unlimited</strong> Invoices</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Custom Branding (Logo &amp; Sig)</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> PDF / JPG Downloads</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> UPI Payment QR &amp; WhatsApp</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Analytics Dashboard</strong></li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Customer Management</strong></li>
+          </ul>
+          <button class="btn btn-secondary plan-btn" id="btn-select-pro" onclick="purchasePlan('pro')">Upgrade Pro</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  
+  <!-- Firebase CDNs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <!-- Optional build-time production config -->
+  <script src="config.js" onerror="this.remove()"></script>
+  <script src="script.js"></script>
+  
+  <!-- PWA Bootstrapper -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js')
+          .then(function(reg) { console.log('[PWA] ServiceWorker registered scope:', reg.scope); })
+          .catch(function(err) { console.error('[PWA] ServiceWorker registration failed:', err); });
+      });
+    }
+  </script>
+</body>
+</html>
