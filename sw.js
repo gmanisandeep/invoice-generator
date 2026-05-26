@@ -1,4 +1,4 @@
-var CACHE_NAME = 'invoiceflow-cache-v3';
+var CACHE_NAME = 'billblue-cache-v3';
 var ASSETS_TO_CACHE = [
   './',
   './index.html',
