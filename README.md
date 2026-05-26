@@ -1,4 +1,4 @@
-# InvoiceFlow — Premium GST Invoicing & Client SaaS PWA
+# Bill Blue — Premium GST Invoicing & Client SaaS PWA
 
 [![Vercel Deployment](https://img.shields.io/badge/Deploy-Vercel-blue?logo=vercel&style=flat-square)](https://vercel.com)
 [![PWA Standalone](https://img.shields.io/badge/PWA-Installable-blueviolet?logo=pwa&style=flat-square)](manifest.json)
@@ -6,7 +6,7 @@
 [![Code Structure](https://img.shields.io/badge/Architecture-Vanilla--JS-3b82f6?style=flat-square)](#architecture)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-**InvoiceFlow** is an enterprise-grade, high-performance, and beautifully tailored Indian GST Invoice Generator built as an installable **Progressive Web App (PWA)**. Equipped with dynamic SaaS auth, sandbox fallback modes, multi-tier subscription gates, scan-and-pay UPI payment QRs, direct WhatsApp shares, and local A4 horizontal scroll editors, it's designed to streamline invoicing operations for wholesalers, retail outlets, and small-to-medium businesses.
+**Bill Blue** is an enterprise-grade, high-performance, and beautifully tailored Indian GST Invoice Generator built as an installable **Progressive Web App (PWA)**. Equipped with dynamic SaaS auth, sandbox fallback modes, multi-tier subscription gates, scan-and-pay UPI payment QRs, direct WhatsApp shares, and local A4 horizontal scroll editors, it's designed to streamline invoicing operations for wholesalers, retail outlets, and small-to-medium businesses.
 
 ---
 
@@ -25,7 +25,7 @@
 
 ## Project Structure & Architecture
 
-InvoiceFlow is written using pure high-performance **Vanilla HTML5, CSS3, and JavaScript**, ensuring instant loading speeds, zero bundle build latency, and offline portability:
+Bill Blue is written using pure high-performance **Vanilla HTML5, CSS3, and JavaScript**, ensuring instant loading speeds, zero bundle build latency, and offline portability:
 
 ```
 invoice-generator/
@@ -46,7 +46,7 @@ invoice-generator/
 
 ## Quick Start — Local Development
 
-Running InvoiceFlow locally is extremely simple and requires no active database config to test:
+Running Bill Blue locally is extremely simple and requires no active database config to test:
 
 ### 1. Clone & Reorganize
 Clone the files into a subdirectory of your choice:
@@ -127,7 +127,7 @@ If you want to bake credentials directly into your deployment bundle (e.g. for V
 ## Production Deployment Checklist
 
 ### Vercel Deployment (Recommended)
-InvoiceFlow is fully optimized for **Vercel** out-of-the-box using [vercel.json](vercel.json).
+Bill Blue is fully optimized for **Vercel** out-of-the-box using [vercel.json](vercel.json).
 1. Push your repository to GitHub (ensure `config.js` and local sandbox files are ignored).
 2. Open Vercel Console → Click **Add New** → Select **Project**.
 3. Import your `invoice-generator` repository.
