@@ -992,6 +992,7 @@ function syncUserData(user) {
 }
 
 function handleLoggedInState() {
+  document.body.classList.add('logged-in');
   document.getElementById('sidebar').style.display = 'flex';
   document.getElementById('mobile-nav').style.display = 'flex';
   document.getElementById('main-wrap').style.marginLeft = '';
@@ -1054,6 +1055,7 @@ function handleLoggedInState() {
 }
 
 function handleLoggedOutState() {
+  document.body.classList.remove('logged-in');
   currentUser = null;
   document.getElementById('sidebar').style.display = 'none';
   document.getElementById('mobile-nav').style.display = 'none';
