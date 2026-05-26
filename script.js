@@ -1453,7 +1453,7 @@ window.addEventListener('appinstalled', function(evt) {
 
 // Check if swipe guide banner is required on small screens
 function checkSwipeHintVisibility() {
-  var isMobile = window.innerWidth <= 680;
+  var isMobile = window.innerWidth <= 780;
   var isDismissed = localStorage.getItem('invoiceflow_dismissed_swipe_hint') === 'true';
   var banner = document.getElementById('swipe-hint-banner');
   if (banner) {

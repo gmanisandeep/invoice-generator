@@ -262,13 +262,10 @@ input[type="number"]{-moz-appearance:textfield;appearance:textfield}
 @media(max-width:1024px){.stats-grid-4{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:900px){
   .charts-grid{grid-template-columns:1fr}
-  .inv-meta-customer{grid-template-columns:1fr}.inv-customer-block{border-right:none;border-bottom:1px solid var(--border)}
-  .inv-payment{grid-template-columns:1fr}.inv-bank{border-right:none;border-bottom:1px solid var(--border)}
-  .inv-footer-section{grid-template-columns:1fr}.inv-terms{border-right:none;border-bottom:1px solid var(--border)}
   .upload-grid{grid-template-columns:1fr}
 }
-/* ═════════ MOBILE LAYOUT (max-width: 680px) ═════════ */
-@media(max-width:680px){
+/* ═════════ MOBILE LAYOUT (max-width: 780px) ═════════ */
+@media(max-width:780px){
   :root{--sidebar-w:0px}
   .sidebar{display:none}
   .main-wrap{margin-left:0;padding-top:0!important;padding-bottom:72px}
