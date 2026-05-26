@@ -72,10 +72,6 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>Settings</span>
       </a>
-      <a class="nav-item nav-item-admin" data-view="admin" onclick="navigateTo('admin')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span>Admin Portal</span>
-      </a>
     </nav>
     
     <div class="sidebar-user-card" id="sidebar-user-panel" style="display:none">
@@ -98,6 +94,7 @@
     <!-- ════════ VIEW: AUTH (LOGIN / REGISTER) ════════ -->
     <section id="view-auth" class="view active-view">
       <div class="auth-container">
+        <!-- Sign In Card -->
         <div class="auth-card" id="auth-login-card">
           <div class="auth-header">
             <div class="auth-brand-icon">
@@ -106,23 +103,24 @@
             <h1 class="auth-title">InvoiceFlow</h1>
             <p class="auth-subtitle">Sign in to manage invoices &amp; business billing</p>
           </div>
-          <div class="form-group" style="margin-bottom:12px;">
+          <div class="auth-form-group">
             <label>Email Address</label>
             <input type="email" id="login-email" placeholder="name@company.com">
           </div>
-          <div class="form-group" style="margin-bottom:16px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+          <div class="auth-form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
               <label style="margin-bottom:0;">Password</label>
-              <a href="#" class="auth-link" style="font-size: 0.7rem;" onclick="showAuthCard('forgot')">Forgot?</a>
+              <a href="#" class="auth-link" style="font-size: 0.72rem;" onclick="showAuthCard('forgot')">Forgot?</a>
             </div>
             <input type="password" id="login-password" placeholder="••••••••">
           </div>
-          <button class="btn btn-primary btn-auth" style="width:100%; justify-content:center; height:38px;" onclick="handleLogin()">Sign In</button>
+          <button class="btn btn-primary btn-auth" onclick="handleLogin()">Sign In</button>
           <div class="auth-footer-text">
             Don't have an account? <a href="#" class="auth-link" onclick="showAuthCard('register')">Register</a>
           </div>
         </div>
 
+        <!-- Sign Up Card -->
         <div class="auth-card" id="auth-register-card" style="display:none">
           <div class="auth-header">
             <div class="auth-brand-icon">
@@ -131,32 +129,33 @@
             <h1 class="auth-title">Create Account</h1>
             <p class="auth-subtitle">Start professional invoicing in seconds</p>
           </div>
-          <div class="form-group" style="margin-bottom:10px;">
+          <div class="auth-form-group">
             <label>Business / Company Name</label>
             <input type="text" id="register-company" placeholder="e.g. Balaji Wholesalers">
           </div>
-          <div class="form-group" style="margin-bottom:10px;">
+          <div class="auth-form-group">
             <label>Email Address</label>
             <input type="email" id="register-email" placeholder="name@company.com">
           </div>
-          <div class="form-group" style="margin-bottom:10px;">
+          <div class="auth-form-group">
             <label>Password</label>
             <input type="password" id="register-password" placeholder="Min 6 characters">
           </div>
-          <div class="form-group" style="margin-bottom:16px;">
+          <div class="auth-form-group">
             <label>Select Initial Plan</label>
-            <select id="register-plan" class="inv-select" style="margin-top: 4px; background: var(--bg-warm);">
+            <select id="register-plan" class="inv-select" style="margin-top: 4px;">
               <option value="free">Free Tier (10 invoices/mo)</option>
               <option value="basic">Basic Plan (₹99/year)</option>
               <option value="pro">Pro Plan (₹299/year)</option>
             </select>
           </div>
-          <button class="btn btn-primary btn-auth" style="width:100%; justify-content:center; height:38px;" onclick="handleRegister()">Create Account</button>
+          <button class="btn btn-primary btn-auth" onclick="handleRegister()">Create Account</button>
           <div class="auth-footer-text">
             Already registered? <a href="#" class="auth-link" onclick="showAuthCard('login')">Sign In</a>
           </div>
         </div>
 
+        <!-- Forgot Password Card -->
         <div class="auth-card" id="auth-forgot-card" style="display:none">
           <div class="auth-header">
             <div class="auth-brand-icon">
@@ -165,12 +164,12 @@
             <h1 class="auth-title">Reset Password</h1>
             <p class="auth-subtitle">Enter your email to receive a recovery link</p>
           </div>
-          <div class="form-group" style="margin-bottom:16px;">
+          <div class="auth-form-group">
             <label>Email Address</label>
             <input type="email" id="forgot-email" placeholder="name@company.com">
           </div>
-          <button class="btn btn-primary btn-auth" style="width:100%; justify-content:center; height:38px;" onclick="handleForgotPassword()">Send Reset Link</button>
-          <div class="auth-footer-text" style="margin-top:16px;">
+          <button class="btn btn-primary btn-auth" onclick="handleForgotPassword()">Send Reset Link</button>
+          <div class="auth-footer-text">
             Back to <a href="#" class="auth-link" onclick="showAuthCard('login')">Sign In</a>
           </div>
         </div>
@@ -389,6 +388,7 @@
           <div class="form-group"><label>Phone</label><input type="tel" id="settings-phone" placeholder="+91 98765 43210"></div>
           <div class="form-group"><label>Email</label><input type="email" id="settings-email" placeholder="info@business.com"></div>
           <div class="form-group"><label>State</label><select id="settings-state"><option value="">Select State</option><option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Goa</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option><option>Delhi</option><option>Jammu & Kashmir</option><option>Ladakh</option><option>Chandigarh</option><option>Puducherry</option></select></div>
+          <div class="form-group"><label>App Theme Color</label><select id="settings-theme" class="inv-select"><option value="blue">Classic Blue</option><option value="green">Emerald Green</option><option value="purple">Indigo Purple</option><option value="charcoal">Sleek Charcoal</option></select></div>
           <div class="form-group form-group-full"><label>Address</label><textarea id="settings-address" placeholder="Full Business Address" rows="2"></textarea></div>
         </div>
       </div>
@@ -545,7 +545,6 @@
     <a class="mobile-nav-item" data-view="invoice" onclick="navigateTo('invoice')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>Invoice</span></a>
     <a class="mobile-nav-item" data-view="history" onclick="navigateTo('history')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>History</span></a>
     <a class="mobile-nav-item" data-view="settings" onclick="navigateTo('settings')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
-    <a class="mobile-nav-item mobile-nav-admin" data-view="admin" onclick="navigateTo('admin')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Admin</span></a>
   </nav>
 
   <div id="toast-container"></div>

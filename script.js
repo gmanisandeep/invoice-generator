@@ -30,6 +30,50 @@ var invoiceNumberEl, invoiceDateEl, invoiceStatusEl, amountWordsEl;
 var prevBalanceEl, receivedEl, balanceDueEl;
 var taxPrintPct;
 
+var THEMES = {
+  blue: {
+    '--primary': '#1e40af',
+    '--primary-med': '#2563eb',
+    '--primary-light': '#3b82f6',
+    '--primary-soft': '#eff6ff',
+    '--primary-hover': '#1e3a8a',
+    '--primary-glow': 'rgba(37,99,235,.08)'
+  },
+  green: {
+    '--primary': '#047857',
+    '--primary-med': '#059669',
+    '--primary-light': '#10b981',
+    '--primary-soft': '#ecfdf5',
+    '--primary-hover': '#065f46',
+    '--primary-glow': 'rgba(5,150,105,.08)'
+  },
+  purple: {
+    '--primary': '#5b21b6',
+    '--primary-med': '#7c3aed',
+    '--primary-light': '#8b5cf6',
+    '--primary-soft': '#f5f3ff',
+    '--primary-hover': '#4c1d95',
+    '--primary-glow': 'rgba(124,58,237,.08)'
+  },
+  charcoal: {
+    '--primary': '#111827',
+    '--primary-med': '#1f2937',
+    '--primary-light': '#4b5563',
+    '--primary-soft': '#f9fafb',
+    '--primary-hover': '#030712',
+    '--primary-glow': 'rgba(31,41,55,.08)'
+  }
+};
+
+function applyTheme(themeName) {
+  var tName = themeName || 'blue';
+  var theme = THEMES[tName] || THEMES.blue;
+  var root = document.documentElement;
+  for (var prop in theme) {
+    root.style.setProperty(prop, theme[prop]);
+  }
+}
+
 // ═══════════════════════════════════════════
 //  STORAGE
 // ═══════════════════════════════════════════
@@ -46,7 +90,16 @@ function navigateTo(view) {
     view = 'auth';
   }
   if (currentUser && view === 'auth') {
-    view = 'dashboard';
+    var isAdmin = currentUser && currentUser.email && currentUser.email.toLowerCase() === 'admin@invoiceflow.com';
+    view = isAdmin ? 'admin' : 'dashboard';
+  }
+  
+  if (view === 'admin') {
+    var isAdmin = currentUser && currentUser.email && currentUser.email.toLowerCase() === 'admin@invoiceflow.com';
+    if (!isAdmin) {
+      showToast('Access Denied: Administrative Portal Restricted!', 'error');
+      view = 'dashboard';
+    }
   }
 
   document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active-view'); });
@@ -103,6 +156,11 @@ function init() {
   receivedEl      = document.getElementById('received-amount');
   balanceDueEl    = document.getElementById('balance-due');
   taxPrintPct     = document.querySelector('.tax-print-pct');
+
+  var biz = loadData(KEYS.BUSINESS);
+  if (biz && biz.theme) {
+    applyTheme(biz.theme);
+  }
 
   initializeFirebase();
 }
@@ -317,6 +375,10 @@ function loadSettingsForm() {
   
   var stEl=document.getElementById('settings-state');
   if(p.state){for(var i=0;i<stEl.options.length;i++){if(stEl.options[i].text===p.state||stEl.options[i].value===p.state){stEl.selectedIndex=i;break;}}}
+  
+  var themeEl=document.getElementById('settings-theme');
+  if(themeEl && p.theme){themeEl.value=p.theme;}
+  
   if(p.logo){var li=document.getElementById('settings-logo-img');li.src=p.logo;li.style.display='block';document.getElementById('logo-placeholder').style.display='none';li.closest('.upload-zone').classList.add('has-image');}
   if(p.signature){var si=document.getElementById('settings-sig-img');si.src=p.signature;si.style.display='block';document.getElementById('sig-placeholder').style.display='none';si.closest('.upload-zone').classList.add('has-image');}
 }
@@ -325,12 +387,15 @@ function saveBusinessProfile() {
   var consentToggle = document.getElementById('settings-consent');
   var p={name:getVal('settings-name'),gst:getVal('settings-gst'),phone:getVal('settings-phone'),email:getVal('settings-email'),
     address:getVal('settings-address'),state:document.getElementById('settings-state').value,
+    theme:document.getElementById('settings-theme').value,
     bank:getVal('settings-bank'),accHolder:getVal('settings-acc-holder'),accNumber:getVal('settings-acc-number'),
     ifsc:getVal('settings-ifsc'),upi:getVal('settings-upi'),terms:getVal('settings-terms'),
     analyticsConsent: consentToggle ? consentToggle.checked : true,
     logo:old.logo||null,signature:old.signature||null};
   saveData(KEYS.BUSINESS,p);
   syncSavedProfile(p);
+  applyTheme(p.theme);
+  applyBusinessToInvoice();
   
   var configInput = document.getElementById('settings-firebase-config');
   if (configInput) {
@@ -341,10 +406,10 @@ function saveBusinessProfile() {
       showToast('Firebase Config updated! Reloading panel...', 'info');
       setTimeout(function() { window.location.reload(); }, 1200);
     } else {
-      showToast('Settings saved!', 'success');
+      showToast('Settings saved successfully!', 'success');
     }
   } else {
-    showToast('Settings saved!', 'success');
+    showToast('Settings saved successfully!', 'success');
   }
 }
 function handleLogoUpload(e){handleImgUpload(e,'settings-logo-img','logo-placeholder','logo');}
@@ -448,7 +513,15 @@ function deleteInvoice(id){
 }
 function toggleStatus(id){
   var all=loadData(KEYS.INVOICES)||[];var inv=all.find(function(i){return i.id===id;});
-  if(inv){inv.status=inv.status==='paid'?'pending':'paid';saveData(KEYS.INVOICES,all);renderHistory();renderDashboard();showToast('Status updated','success');}
+  if(inv){
+    inv.status=inv.status==='paid'?'pending':'paid';
+    saveData(KEYS.INVOICES,all);
+    syncSavedInvoice(inv);
+    renderHistory();
+    renderDashboard();
+    var displayStatus = inv.status.charAt(0).toUpperCase() + inv.status.slice(1);
+    showToast('Invoice status updated to ' + displayStatus + '!', 'success');
+  }
 }
 function getInvoiceById(id){return(loadData(KEYS.INVOICES)||[]).find(function(i){return i.id===id;})||null;}
 
@@ -465,7 +538,11 @@ function renderHistory(){
   sorted.forEach(function(inv){
     var tr=document.createElement('tr');
     var bc=inv.status==='paid'?'badge-paid':'badge-pending';var bt=inv.status==='paid'?'Paid':'Pending';
-    tr.innerHTML='<td>'+escapeHtml(inv.number)+'</td><td>'+escapeHtml(inv.customerName||'—')+'</td><td>'+escapeHtml(inv.date||'—')+'</td><td class="td-amount">'+formatINR(inv.grandTotal||inv.total||0)+'</td><td><span class="badge '+bc+'" style="cursor:pointer" onclick="toggleStatus(\''+inv.id+'\')">'+bt+'</span></td><td class="td-actions"><button class="btn-link" onclick="loadInvoiceForEdit(\''+inv.id+'\')">Edit</button><button class="btn-danger-ghost" onclick="deleteInvoice(\''+inv.id+'\')" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
+    var statusBtn = inv.status==='paid' 
+      ? '<button class="btn-link" style="color:var(--amber); margin-right:12px; font-weight:600;" onclick="toggleStatus(\''+inv.id+'\')">Mark as Pending</button>'
+      : '<button class="btn-link" style="color:var(--green); margin-right:12px; font-weight:600;" onclick="toggleStatus(\''+inv.id+'\')">Mark as Paid</button>';
+      
+    tr.innerHTML='<td>'+escapeHtml(inv.number)+'</td><td>'+escapeHtml(inv.customerName||'—')+'</td><td>'+escapeHtml(inv.date||'—')+'</td><td class="td-amount">'+formatINR(inv.grandTotal||inv.total||0)+'</td><td><span class="badge '+bc+'" style="cursor:pointer" onclick="toggleStatus(\''+inv.id+'\')">'+bt+'</span></td><td class="td-actions">'+statusBtn+'<button class="btn-link" onclick="loadInvoiceForEdit(\''+inv.id+'\')">Edit</button><button class="btn-danger-ghost" onclick="deleteInvoice(\''+inv.id+'\')" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
     tb.appendChild(tr);
   });
 }
@@ -1057,7 +1134,13 @@ function handleLoggedInState() {
   var userInvs = currentUser.invoicesList || loadData(KEYS.INVOICES) || [];
   saveData(KEYS.INVOICES, userInvs);
   
-  navigateTo('dashboard');
+  var isAdmin = currentUser && currentUser.email && currentUser.email.toLowerCase() === 'admin@invoiceflow.com';
+  if (isAdmin) {
+    adminAuthorized = true;
+    navigateTo('admin');
+  } else {
+    navigateTo('dashboard');
+  }
   
   setNextInvoiceNumber();
   setTodayDate();
