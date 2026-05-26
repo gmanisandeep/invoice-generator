@@ -13,6 +13,8 @@ var KEYS = {
 var itemCounter = 0;
 var editingInvoiceId = null;
 var qrInstance = null;
+var subscriptionQRInstance = null;
+var pendingUpgradePlan = null;
 var dashFilter = 'all';
 
 // Auth State
@@ -885,8 +887,12 @@ function loadRealAdminData() {
         
         var bizInfo = {
           uid: userDoc.id,
+          email: userData.email || '',
           name: (userData.businessSettings && userData.businessSettings.name) || userData.companyName || 'Unnamed Business',
           subscription: userData.planType || 'free',
+          subscriptionStatus: userData.subscriptionStatus || 'inactive',
+          requestedPlan: userData.requestedPlan || '',
+          paymentUTR: userData.paymentUTR || '',
           subEnd: userData.subscriptionExpiry || '—',
           activity: 'active',
           invoices: 0,
@@ -931,8 +937,13 @@ function loadRealAdminData() {
     currentInvs.forEach(function(inv) { currentRev += inv.grandTotal || inv.total || 0; });
     
     list.push({
+      uid: (currentUser && currentUser.uid) || 'sandbox_current_uid',
+      email: (currentUser && currentUser.email) || 'sandbox@billblue.com',
       name: currentBiz.name || 'Your Business Name (Sandbox)',
       subscription: (currentUser && currentUser.planType) || 'free',
+      subscriptionStatus: (currentUser && currentUser.subscriptionStatus) || 'inactive',
+      requestedPlan: (currentUser && currentUser.requestedPlan) || '',
+      paymentUTR: (currentUser && currentUser.paymentUTR) || '',
       subEnd: (currentUser && currentUser.subscriptionExpiry) || '2027-05-25',
       activity: 'active',
       invoices: currentInvs.length,
@@ -949,8 +960,13 @@ function loadRealAdminData() {
       if (u.invoicesList) u.invoicesList.forEach(function(inv) { rev += inv.grandTotal || inv.total || 0; });
       
       list.push({
+        uid: email,
+        email: email,
         name: (u.businessSettings && u.businessSettings.name) || 'Simulated Business',
         subscription: u.planType || 'free',
+        subscriptionStatus: u.subscriptionStatus || 'inactive',
+        requestedPlan: u.requestedPlan || '',
+        paymentUTR: u.paymentUTR || '',
         subEnd: u.subscriptionExpiry || '2027-05-25',
         activity: 'active',
         invoices: u.invoicesList ? u.invoicesList.length : 0,
@@ -962,6 +978,118 @@ function loadRealAdminData() {
     
     adminLoadedBusinesses = list;
     renderAdminDashboard(list);
+  }
+}
+
+function approveSubscription(uidOrEmail, requestedPlan) {
+  showToast('Approving subscription...', 'info');
+  var d = new Date();
+  d.setFullYear(d.getFullYear() + 1);
+  var expiry = dateStr(d);
+  
+  var subscriptionData = {
+    planType: requestedPlan,
+    subscriptionStatus: 'active',
+    subscriptionExpiry: expiry,
+    requestedPlan: '',
+    paymentUTR: ''
+  };
+  
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    firebaseDb.collection('users').doc(uidOrEmail).update(subscriptionData)
+      .then(function() {
+        showToast('Subscription approved successfully!', 'success');
+        if (currentUser && currentUser.uid === uidOrEmail) {
+          currentUser.planType = requestedPlan;
+          currentUser.subscriptionStatus = 'active';
+          currentUser.subscriptionExpiry = expiry;
+          currentUser.requestedPlan = '';
+          currentUser.paymentUTR = '';
+          handleLoggedInState();
+        }
+        loadRealAdminData();
+      }).catch(function(err) {
+        showToast('Failed to approve user: ' + err.message, 'error');
+      });
+    return;
+  }
+  
+  // Sandbox simulated local storage updates
+  var users = loadData('billblue_simulated_users') || {};
+  var emailKey = uidOrEmail.toLowerCase();
+  if (users[emailKey]) {
+    users[emailKey].planType = requestedPlan;
+    users[emailKey].subscriptionStatus = 'active';
+    users[emailKey].subscriptionExpiry = expiry;
+    users[emailKey].requestedPlan = '';
+    users[emailKey].paymentUTR = '';
+    saveData('billblue_simulated_users', users);
+    showToast('Sandbox subscription approved successfully!', 'success');
+    loadRealAdminData();
+    return;
+  }
+  
+  // Current user sandbox override
+  if (currentUser && (currentUser.uid === uidOrEmail || currentUser.email.toLowerCase() === emailKey)) {
+    currentUser.planType = requestedPlan;
+    currentUser.subscriptionStatus = 'active';
+    currentUser.subscriptionExpiry = expiry;
+    currentUser.requestedPlan = '';
+    currentUser.paymentUTR = '';
+    saveData('billblue_current_user', currentUser);
+    handleLoggedInState();
+    showToast('Sandbox subscription approved successfully!', 'success');
+    loadRealAdminData();
+  }
+}
+
+function rejectSubscription(uidOrEmail) {
+  showToast('Rejecting request...', 'info');
+  var subscriptionData = {
+    subscriptionStatus: 'inactive',
+    requestedPlan: '',
+    paymentUTR: ''
+  };
+  
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    firebaseDb.collection('users').doc(uidOrEmail).update(subscriptionData)
+      .then(function() {
+        showToast('Subscription request rejected.', 'warning');
+        if (currentUser && currentUser.uid === uidOrEmail) {
+          currentUser.subscriptionStatus = 'inactive';
+          currentUser.requestedPlan = '';
+          currentUser.paymentUTR = '';
+          handleLoggedInState();
+        }
+        loadRealAdminData();
+      }).catch(function(err) {
+        showToast('Failed to reject request: ' + err.message, 'error');
+      });
+    return;
+  }
+  
+  // Sandbox simulated local storage updates
+  var users = loadData('billblue_simulated_users') || {};
+  var emailKey = uidOrEmail.toLowerCase();
+  if (users[emailKey]) {
+    users[emailKey].subscriptionStatus = 'inactive';
+    users[emailKey].requestedPlan = '';
+    users[emailKey].paymentUTR = '';
+    saveData('billblue_simulated_users', users);
+    showToast('Sandbox request rejected.', 'warning');
+    loadRealAdminData();
+    return;
+  }
+  
+  // Current user sandbox override
+  if (currentUser && (currentUser.uid === uidOrEmail || currentUser.email.toLowerCase() === emailKey)) {
+    currentUser.subscriptionStatus = 'inactive';
+    currentUser.requestedPlan = '';
+    currentUser.paymentUTR = '';
+    saveData('billblue_current_user', currentUser);
+    handleLoggedInState();
+    showToast('Sandbox request rejected.', 'warning');
+    loadRealAdminData();
   }
 }
 
@@ -1043,11 +1171,14 @@ function renderAdminDashboard(businesses) {
   
   var filtered = businesses.filter(function(b) {
     if (adminSubFilter === 'all') return true;
+    if (adminSubFilter === 'pending') {
+      return b.subscriptionStatus === 'pending' || b.subscription === 'pending';
+    }
     return b.subscription === adminSubFilter;
   });
   
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--text-muted); font-weight: 500;">No businesses match this filter.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: var(--text-muted); font-weight: 500;">No businesses match this filter.</td></tr>';
     return;
   }
   
@@ -1056,10 +1187,28 @@ function renderAdminDashboard(businesses) {
     
     // Subscription Badge
     var subBadge = '';
-    if (b.subscription === 'active' || b.subscription === 'free') subBadge = '<span class="badge badge-active">Active</span>';
-    else if (b.subscription === 'expiring') subBadge = '<span class="badge badge-expiring">Expiring</span>';
-    else if (b.subscription === 'expired') subBadge = '<span class="badge badge-expired">Expired</span>';
-    else subBadge = '<span class="badge badge-active">' + b.subscription.toUpperCase() + '</span>';
+    if (b.subscriptionStatus === 'pending' || b.subscription === 'pending') {
+      var req = b.requestedPlan ? b.requestedPlan.toUpperCase() : 'PREMIUM';
+      subBadge = '<span class="badge" style="background:#f59e0b; color:#fff; font-weight:700; padding:2px 6px; border-radius:4px; display:inline-block;">PENDING (' + req + ')</span>';
+      if (b.paymentUTR) {
+        subBadge += '<br><span style="font-size:0.58rem; color:var(--text-muted); font-family:monospace; font-weight:600;">UTR: ' + b.paymentUTR + '</span>';
+      }
+    } else {
+      var subType = b.subscription ? b.subscription.toLowerCase() : 'free';
+      if (subType === 'free') {
+        subBadge = '<span class="badge" style="background:var(--bg-warm); border:1px solid var(--border); color:var(--text-sec); padding:2px 6px; border-radius:4px; font-weight:600;">FREE</span>';
+      } else if (subType === 'basic') {
+        subBadge = '<span class="badge" style="background:#dbeafe; color:#1e40af; font-weight:700; padding:2px 6px; border-radius:4px;">BASIC</span>';
+      } else if (subType === 'pro') {
+        subBadge = '<span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700; padding:2px 6px; border-radius:4px;">PRO</span>';
+      } else if (subType === 'expiring') {
+        subBadge = '<span class="badge badge-expiring">Expiring</span>';
+      } else if (subType === 'expired') {
+        subBadge = '<span class="badge badge-expired">Expired</span>';
+      } else {
+        subBadge = '<span class="badge badge-active">' + subType.toUpperCase() + '</span>';
+      }
+    }
     
     // Activity Badge
     var actBadge = b.activity === 'active' 
@@ -1080,13 +1229,42 @@ function renderAdminDashboard(businesses) {
       bizName += ' <span style="font-size:0.62rem; color:var(--primary); font-weight:700; background:var(--primary-soft); padding:1px 5px; border-radius:10px; margin-left:5px;">YOU</span>';
     }
     
+    // Actions Column
+    var actionHtml = '';
+    var targetId = b.uid || b.email || '';
+    if (b.subscriptionStatus === 'pending' || b.subscription === 'pending') {
+      var reqPlan = b.requestedPlan || 'basic';
+      actionHtml = 
+        '<div style="display:flex; gap:6px; justify-content:center;">' +
+          '<button class="btn btn-save" style="height:24px; padding:0 8px; font-size:0.6rem; font-weight:700;" onclick="approveSubscription(\'' + targetId + '\', \'' + reqPlan + '\')">Approve</button>' +
+          '<button class="btn btn-clear" style="height:24px; padding:0 8px; font-size:0.6rem; font-weight:700; border-color:#ef4444; color:#ef4444; background:none;" onclick="rejectSubscription(\'' + targetId + '\')">Reject</button>' +
+        '</div>';
+    } else {
+      var subType = b.subscription ? b.subscription.toLowerCase() : 'free';
+      if (subType === 'basic' || subType === 'pro') {
+        actionHtml = '<button class="btn btn-clear" style="height:24px; padding:0 8px; font-size:0.6rem; font-weight:700; border-color:#6b7280; color:#6b7280; background:none;" onclick="rejectSubscription(\'' + targetId + '\')">Revoke</button>';
+      } else {
+        actionHtml = 
+          '<div style="display:flex; gap:6px; justify-content:center;">' +
+            '<button class="btn btn-clear" style="height:24px; padding:0 6px; font-size:0.58rem; font-weight:600; border-color:var(--primary); background:none;" onclick="approveSubscription(\'' + targetId + '\', \'basic\')">+Basic</button>' +
+            '<button class="btn btn-clear" style="height:24px; padding:0 6px; font-size:0.58rem; font-weight:600; border-color:var(--primary); background:none;" onclick="approveSubscription(\'' + targetId + '\', \'pro\')">+Pro</button>' +
+          '</div>';
+      }
+    }
+    
+    // System admin override
+    if (b.isCurrent && currentUser && currentUser.email && currentUser.email.toLowerCase() === 'admin@billblue.com') {
+      actionHtml = '<span style="font-size:0.6rem; color:var(--text-muted); font-weight:600;">System Admin</span>';
+    }
+    
     tr.innerHTML = 
       '<td style="font-weight: 600; color: var(--text);">' + bizName + '</td>' +
       '<td>' + subBadge + '</td>' +
       '<td>' + actBadge + '</td>' +
       '<td style="text-align: center; font-weight: 600;">' + invCountText + '</td>' +
       '<td style="text-align: right; font-weight: 600; font-variant-numeric: tabular-nums;">' + revText + '</td>' +
-      '<td style="text-align: center;">' + conBadge + '</td>';
+      '<td style="text-align: center;">' + conBadge + '</td>' +
+      '<td style="text-align: center;">' + actionHtml + '</td>';
       
     tbody.appendChild(tr);
   });
@@ -1196,8 +1374,19 @@ function handleLoggedInState() {
     document.getElementById('user-display-email').textContent = currentUser.email;
     document.getElementById('user-avatar-initials').textContent = initials;
     var badge = document.getElementById('user-plan-badge');
-    badge.textContent = currentUser.planType + ' plan';
-    badge.className = 'user-plan-badge badge-plan-' + currentUser.planType;
+    if (badge) {
+      if (currentUser.subscriptionStatus === 'pending') {
+        badge.textContent = 'Pending Verification';
+        badge.className = 'user-plan-badge';
+        badge.style.background = '#f59e0b';
+        badge.style.color = '#fff';
+      } else {
+        badge.textContent = currentUser.planType + ' plan';
+        badge.className = 'user-plan-badge badge-plan-' + currentUser.planType;
+        badge.style.background = '';
+        badge.style.color = '';
+      }
+    }
   }
   
   // Sync Mobile Top Header
@@ -1207,20 +1396,41 @@ function handleLoggedInState() {
     if (mobileAvatar) mobileAvatar.textContent = initials;
     var mobileBadge = document.getElementById('mh-plan-badge');
     if (mobileBadge) {
-      mobileBadge.textContent = currentUser.planType + ' plan';
-      mobileBadge.className = 'mh-badge badge-plan-' + currentUser.planType;
+      if (currentUser.subscriptionStatus === 'pending') {
+        mobileBadge.textContent = 'Pending Verification';
+        mobileBadge.className = 'mh-badge';
+        mobileBadge.style.background = '#f59e0b';
+        mobileBadge.style.color = '#fff';
+      } else {
+        mobileBadge.textContent = currentUser.planType + ' plan';
+        mobileBadge.className = 'mh-badge badge-plan-' + currentUser.planType;
+        mobileBadge.style.background = '';
+        mobileBadge.style.color = '';
+      }
     }
   }
   
   var bannerPlan = document.getElementById('settings-plan-name');
-  if (bannerPlan) bannerPlan.textContent = currentUser.planType + ' plan';
+  if (bannerPlan) {
+    if (currentUser.subscriptionStatus === 'pending') {
+      bannerPlan.textContent = 'Pending Verification (' + (currentUser.requestedPlan || 'Premium').toUpperCase() + ')';
+    } else {
+      bannerPlan.textContent = currentUser.planType + ' plan';
+    }
+  }
   var expiryText = document.getElementById('settings-expiry-text');
   if (expiryText) {
-    if (currentUser.planType !== 'free' && currentUser.subscriptionExpiry) {
+    if (currentUser.subscriptionStatus === 'pending') {
+      expiryText.textContent = 'Waiting for platform administrator verification...';
+      expiryText.style.display = 'block';
+      expiryText.style.color = '#f59e0b';
+    } else if (currentUser.planType !== 'free' && currentUser.subscriptionExpiry) {
       expiryText.textContent = 'Expiry Date: ' + currentUser.subscriptionExpiry;
       expiryText.style.display = 'block';
+      expiryText.style.color = '';
     } else {
       expiryText.style.display = 'none';
+      expiryText.style.color = '';
     }
   }
   
@@ -1573,9 +1783,40 @@ function openUpgradeModal() {
     var card = document.getElementById('price-card-' + plan);
     if (card) card.classList.add('pricing-card-current');
     
-    document.getElementById('btn-select-free').textContent = plan === 'free' ? 'Current Plan' : 'Choose Free';
-    document.getElementById('btn-select-basic').textContent = plan === 'basic' ? 'Current Plan' : 'Upgrade Basic';
-    document.getElementById('btn-select-pro').textContent = plan === 'pro' ? 'Current Plan' : 'Upgrade Pro';
+    var isPending = currentUser && currentUser.subscriptionStatus === 'pending';
+    var reqPlan = currentUser ? currentUser.requestedPlan : '';
+    
+    var btnFree = document.getElementById('btn-select-free');
+    var btnBasic = document.getElementById('btn-select-basic');
+    var btnPro = document.getElementById('btn-select-pro');
+    
+    if (btnFree) {
+      btnFree.textContent = plan === 'free' ? 'Current Plan' : 'Choose Free';
+    }
+    
+    if (btnBasic) {
+      if (isPending && reqPlan === 'basic') {
+        btnBasic.textContent = 'Pending Verification';
+        btnBasic.style.background = '#f59e0b';
+        btnBasic.style.color = '#fff';
+      } else {
+        btnBasic.textContent = plan === 'basic' ? 'Current Plan' : 'Upgrade Basic';
+        btnBasic.style.background = '';
+        btnBasic.style.color = '';
+      }
+    }
+    
+    if (btnPro) {
+      if (isPending && reqPlan === 'pro') {
+        btnPro.textContent = 'Pending Verification';
+        btnPro.style.background = '#f59e0b';
+        btnPro.style.color = '#fff';
+      } else {
+        btnPro.textContent = plan === 'pro' ? 'Current Plan' : 'Upgrade Pro';
+        btnPro.style.background = '';
+        btnPro.style.color = '';
+      }
+    }
   }
 }
 
@@ -1598,6 +1839,11 @@ function purchasePlan(plan) {
     return;
   }
   
+  if (currentUser.subscriptionStatus === 'pending') {
+    showToast('You already have a pending verification request. Please wait for Admin approval!', 'warning');
+    return;
+  }
+  
   if (plan === 'free') {
     processPlanUpgrade('free');
     return;
@@ -1606,41 +1852,175 @@ function purchasePlan(plan) {
   var planPrice = plan === 'basic' ? 99 : 299;
   var planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
   
-  showToast('Opening Razorpay Payment Checkout...', 'info');
+  pendingUpgradePlan = plan;
   
-  // Razorpay Checkout Integration
-  if (typeof Razorpay !== 'undefined') {
-    var options = {
-      "key": "rzp_test_5g6h7i8j9k0l1m",
-      "amount": planPrice * 100, // paise
-      "currency": "INR",
-      "name": "Bill Blue",
-      "description": planLabel + " Subscription Plan Upgrade",
-      "handler": function (response) {
-        processPlanUpgrade(plan);
-        showToast('Payment successful! Transaction ID: ' + response.razorpay_payment_id, 'success');
-      },
-      "prefill": {
-        "email": currentUser.email || ""
-      },
-      "theme": {
-        "color": "#1e40af"
+  var modalPlanName = document.getElementById('upi-modal-plan-name');
+  var modalPlanPrice = document.getElementById('upi-modal-plan-price');
+  var modalPayBtn = document.getElementById('upi-modal-pay-btn');
+  var modalQrContainer = document.getElementById('upi-modal-qr-container');
+  var paymentModal = document.getElementById('upi-payment-modal');
+  
+  if (modalPlanName) modalPlanName.textContent = planLabel + ' Plan';
+  if (modalPlanPrice) modalPlanPrice.innerHTML = '₹' + planPrice + '<span>/year</span>';
+  
+  // Dynamic UPI Deep Link
+  var upiLink = 'upi://pay?pa=9398116740@ibl&pn=BillBlue&am=' + planPrice + '&cu=INR';
+  if (modalPayBtn) {
+    modalPayBtn.setAttribute('href', upiLink);
+  }
+  
+  // Generate QR Code dynamically from same UPI deep link
+  if (modalQrContainer) {
+    modalQrContainer.innerHTML = '';
+    if (typeof QRCode !== 'undefined') {
+      try {
+        subscriptionQRInstance = new QRCode(modalQrContainer, {
+          text: upiLink,
+          width: 160,
+          height: 160,
+          colorDark: '#111827',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (e) {
+        modalQrContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; padding:20px;">QR Generation Failed</div>';
+        console.error('QRCode generation error:', e);
       }
-    };
-    var rzp = new Razorpay(options);
-    rzp.on('payment.failed', function (response){
-      showToast('Payment failed: ' + response.error.description, 'error');
-    });
-    rzp.open();
-  } else {
-    // Fallback Mock checkout for testing locally / offline
-    var confirmPay = confirm('Razorpay Payment Gateway Mock:\n\nPay ₹' + planPrice + ' for ' + planLabel + ' Plan?\n\n(Click OK to simulate successful transaction)');
-    if (confirmPay) {
-      processPlanUpgrade(plan);
     } else {
-      showToast('Payment cancelled', 'info');
+      modalQrContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem; padding:20px;">QR Library Offline</div>';
     }
   }
+  
+  if (paymentModal) {
+    paymentModal.style.display = 'flex';
+  }
+}
+
+function closeUPIPaymentModal() {
+  var modal = document.getElementById('upi-payment-modal');
+  if (modal) modal.style.display = 'none';
+  
+  // Reset view panels and fields
+  var mainContent = document.getElementById('upi-modal-main-content');
+  var loadingContent = document.getElementById('upi-modal-loading-content');
+  var utrInput = document.getElementById('upi-utr-input');
+  
+  if (mainContent) mainContent.style.display = 'block';
+  if (loadingContent) loadingContent.style.display = 'none';
+  if (utrInput) {
+    utrInput.value = '';
+    utrInput.style.borderColor = '';
+    utrInput.style.boxShadow = '';
+  }
+  
+  pendingUpgradePlan = null;
+}
+
+function confirmSubscriptionPayment() {
+  if (!pendingUpgradePlan) return;
+  
+  var utrInput = document.getElementById('upi-utr-input');
+  var utr = utrInput ? utrInput.value.trim() : '';
+  
+  // Validation: Must be a 12-digit number
+  if (utr.length !== 12 || !/^\d{12}$/.test(utr)) {
+    showToast('Please enter a valid 12-digit numeric UPI UTR number!', 'error');
+    if (utrInput) {
+      utrInput.focus();
+      utrInput.style.borderColor = '#ef4444';
+      utrInput.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+    }
+    return;
+  }
+  
+  if (utrInput) {
+    utrInput.style.borderColor = '';
+    utrInput.style.boxShadow = '';
+  }
+  
+  var mainContent = document.getElementById('upi-modal-main-content');
+  var loadingContent = document.getElementById('upi-modal-loading-content');
+  var statusIcon = document.getElementById('upi-modal-status-icon');
+  var loadingTitle = document.getElementById('upi-loading-title');
+  var loadingSubtitle = document.getElementById('upi-loading-subtitle');
+  
+  if (mainContent && loadingContent) {
+    // Hide payment screen and display loader view
+    mainContent.style.display = 'none';
+    loadingContent.style.display = 'flex';
+    
+    // Step 1: Simulate connection to payment network
+    if (statusIcon) {
+      statusIcon.className = 'upi-spinner';
+      statusIcon.innerHTML = '';
+    }
+    if (loadingTitle) loadingTitle.textContent = 'Submitting Request';
+    if (loadingSubtitle) loadingSubtitle.textContent = 'Registering payment verification request with platform admin...';
+    
+    setTimeout(function() {
+      // Step 2: Show confirmation checkmark and visual updates
+      if (statusIcon) {
+        statusIcon.className = 'upi-success-checkmark';
+        statusIcon.innerHTML = '✓';
+      }
+      if (loadingTitle) loadingTitle.textContent = 'Submitted Successfully!';
+      if (loadingSubtitle) loadingSubtitle.textContent = 'Your payment details have been submitted. Admin will verify and activate your plan.';
+      
+      setTimeout(function() {
+        var upgradePlan = pendingUpgradePlan;
+        closeUPIPaymentModal();
+        submitSubscriptionPendingRequest(upgradePlan, utr);
+      }, 1500);
+      
+    }, 2000);
+  }
+}
+
+function submitSubscriptionPendingRequest(plan, utr) {
+  showToast('Submitting verification request...', '');
+  
+  var subscriptionData = {
+    subscriptionStatus: 'pending',
+    requestedPlan: plan,
+    paymentUTR: utr,
+    subscriptionExpiry: '—'
+  };
+  
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid).update(subscriptionData)
+      .then(function() {
+        currentUser.subscriptionStatus = 'pending';
+        currentUser.requestedPlan = plan;
+        currentUser.paymentUTR = utr;
+        currentUser.subscriptionExpiry = '—';
+        handleLoggedInState();
+        closeUpgradeModal();
+        showToast('Complete payment registered! Request pending Admin verification.', 'success');
+      }).catch(function(err) {
+        showToast('Submission failed: ' + err.message, 'error');
+      });
+    return;
+  }
+  
+  // Sandbox simulated local storage update
+  var users = loadData('billblue_simulated_users') || {};
+  var email = currentUser.email.toLowerCase();
+  if (users[email]) {
+    users[email].subscriptionStatus = 'pending';
+    users[email].requestedPlan = plan;
+    users[email].paymentUTR = utr;
+    users[email].subscriptionExpiry = '—';
+    saveData('billblue_simulated_users', users);
+  }
+  
+  currentUser.subscriptionStatus = 'pending';
+  currentUser.requestedPlan = plan;
+  currentUser.paymentUTR = utr;
+  currentUser.subscriptionExpiry = '—';
+  saveData('billblue_current_user', currentUser);
+  handleLoggedInState();
+  closeUpgradeModal();
+  showToast('Complete payment registered! Request pending Admin verification.', 'success');
 }
 
 function processPlanUpgrade(plan) {
