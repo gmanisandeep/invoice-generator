@@ -1,9 +1,9 @@
-var CACHE_NAME = 'invoiceflow-cache-v2';
+var CACHE_NAME = 'invoiceflow-cache-v3';
 var ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './style.css?v=2',
-  './script.js?v=2',
+  './style.css?v=3',
+  './script.js?v=3',
   './manifest.json',
   './assets/logo.svg',
   

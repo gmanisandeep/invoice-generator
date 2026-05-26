@@ -1007,9 +1007,6 @@ function syncUserData(user) {
 
 function handleLoggedInState() {
   document.body.classList.add('logged-in');
-  document.getElementById('sidebar').style.display = 'flex';
-  document.getElementById('mobile-nav').style.display = 'flex';
-  document.getElementById('main-wrap').style.marginLeft = '';
   
   var initials = currentUser.email ? currentUser.email.substring(0, 2).toUpperCase() : 'US';
   
@@ -1027,7 +1024,6 @@ function handleLoggedInState() {
   // Sync Mobile Top Header
   var mobileHeader = document.getElementById('mobile-header');
   if (mobileHeader) {
-    mobileHeader.style.display = 'flex';
     var mobileAvatar = document.getElementById('mh-avatar');
     if (mobileAvatar) mobileAvatar.textContent = initials;
     var mobileBadge = document.getElementById('mh-plan-badge');
@@ -1071,12 +1067,6 @@ function handleLoggedInState() {
 function handleLoggedOutState() {
   document.body.classList.remove('logged-in');
   currentUser = null;
-  document.getElementById('sidebar').style.display = 'none';
-  document.getElementById('mobile-nav').style.display = 'none';
-  document.getElementById('main-wrap').style.marginLeft = '0';
-  
-  var mobileHeader = document.getElementById('mobile-header');
-  if (mobileHeader) mobileHeader.style.display = 'none';
   
   var sidebarPanel = document.getElementById('sidebar-user-panel');
   if (sidebarPanel) sidebarPanel.style.display = 'none';
