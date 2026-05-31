@@ -1,9 +1,9 @@
-var CACHE_NAME = 'billblue-cache-v4';
+var CACHE_NAME = 'billblue-cache-v5';
 var ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './style.css?v=4',
-  './script.js?v=4',
+  './style.css?v=5',
+  './script.js?v=5',
   './manifest.json',
   './assets/logo.svg',
   

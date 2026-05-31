@@ -29,7 +29,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
   <!-- Razorpay Checkout Integration -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
@@ -354,6 +354,9 @@
           </div>
         </div>
         <div class="inv-generated">Computer Generated Invoice</div>
+        <div class="inv-branding-footer" id="invoice-branding-footer" style="text-align: center; padding: 6px; font-size: 0.68rem; font-weight: 600; color: var(--text-muted); border-top: 1px dashed var(--border); background: var(--bg-warm); font-family: 'Inter', sans-serif;">
+          Powered by <a href="https://billblue.in" target="_blank" style="color: var(--primary-med); text-decoration: none; font-weight: 700;">Bill Blue</a> — Create Free Invoices at <strong style="color: var(--primary);">billblue.in</strong>
+        </div>
       </div>
     </div><!-- /invoice-scroll-wrap -->
 
@@ -409,6 +412,36 @@
         </div>
       </div>
 
+      <!-- Setup Support Help Card -->
+      <div class="card" style="border: 1px solid #fed7aa; background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div style="text-align: left; flex: 1; min-width: 250px;">
+            <h3 class="card-title" style="margin-bottom: 4px; color: #c2410c; font-weight: 800; font-size: 0.9rem;">🛠️ Need Help Setting Up?</h3>
+            <p style="font-size: 0.76rem; color: #7c2d12; margin: 0; line-height: 1.4;">Get a one-time expert setup service! We can help configure your business details, upload custom logos/signatures, map UPI payouts, import customer lists, and initialize your product catalogs for ultra-fast invoicing.</p>
+          </div>
+          <button class="btn" onclick="contactSetupSupport()" style="background: #ea580c; color: #fff; border: none; font-weight: 700; font-size: 0.75rem; padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; box-shadow: 0 2px 6px rgba(234,88,12,0.2);">Contact Support</button>
+        </div>
+      </div>
+
+      <!-- Referral System Card -->
+      <div class="card" style="border: 1px solid #c084fc; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div style="text-align: left; flex: 1; min-width: 250px;">
+            <h3 class="card-title" style="margin-bottom: 4px; color: #6b21a8; font-weight: 800; font-size: 0.9rem;">🎁 Refer & Earn 1 Month Pro!</h3>
+            <p style="font-size: 0.76rem; color: #581c87; margin: 0; line-height: 1.4;">Invite another business to join Bill Blue. Once they create an account, both you and your friend will receive <strong>1 Month of Pro Extension</strong> completely free!</p>
+            <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 0.72rem; color: #6b21a8; font-weight: 700;">Your Referral Code:</span>
+              <strong id="settings-referral-code" style="font-size: 0.85rem; color: #4c1d95; background: #ebd5ff; padding: 2px 8px; border-radius: var(--radius-sm); font-family: monospace; letter-spacing: 0.05em;">BB-XXXXX</strong>
+            </div>
+            <p style="font-size: 0.65rem; color: #701a75; margin: 6px 0 0 0;" id="settings-referral-count-label">Total Referrals: <strong id="settings-referral-count">0</strong> businesses joined</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn" onclick="shareReferralLink()" style="background: #9333ea; color: #fff; border: none; font-weight: 700; font-size: 0.75rem; padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; box-shadow: 0 2px 6px rgba(147,51,234,0.2);">Invite Business</button>
+            <button class="btn btn-clear" onclick="openEnterReferralModal()" style="font-size: 0.7rem; padding: 6px 12px; height: auto;" id="btn-enter-referral">Enter Referral Code</button>
+          </div>
+        </div>
+      </div>
+
       <div class="card"><h2 class="card-title">Business Information</h2>
         <div class="form-grid">
           <div class="form-group"><label>Business Name</label><input type="text" id="settings-name" placeholder="Your Business Name"></div>
@@ -444,6 +477,13 @@
             <span>Allow business analytics for service improvement</span>
           </label>
           <p class="toggle-help-text">Sharing dynamic invoice counts and aggregated transaction analytics helps platform admins improve overall system performance and diagnostic reporting. If disabled, transaction details remain private and restricted from platform dashboards.</p>
+        </div>
+        <div class="consent-group" id="settings-branding-group" style="margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; display: none;">
+          <label class="toggle-label-large">
+            <input type="checkbox" id="settings-remove-branding">
+            <span>Remove "Powered by Bill Blue" invoice branding (Pro Exclusive)</span>
+          </label>
+          <p class="toggle-help-text">Hides platform's branding link from A4 generated invoices, exported PDFs, images, and WhatsApp shares.</p>
         </div>
       </div>
       <div class="card"><h2 class="card-title">Firebase Cloud Integration</h2>
@@ -511,7 +551,7 @@
             </div>
             <div class="stat-content">
               <span class="stat-value" id="ad-paid-users">0</span>
-              <span class="stat-label">Paid Subscribers</span>
+              <span class="stat-label">Pro Users</span>
             </div>
           </div>
           <div class="stat-card">
@@ -519,8 +559,17 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
             <div class="stat-content">
-              <span class="stat-value" id="ad-expiring-subs">0</span>
-              <span class="stat-label">Expiring Plans</span>
+              <span class="stat-value" id="ad-pending-verifications">0</span>
+              <span class="stat-label">Pending Verifications</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon si-purple">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="ad-referral-stats">0</span>
+              <span class="stat-label">Total Referrals</span>
             </div>
           </div>
           <div class="stat-card stat-card-full-wide">
@@ -846,56 +895,45 @@
 
   <!-- ════════ SUBSCRIPTION UPGRADE MODAL ════════ -->
   <div class="modal-backdrop" id="upgrade-modal" style="display:none">
-    <div class="upgrade-modal-card">
+    <div class="upgrade-modal-card" style="max-width: 720px;">
       <div class="upgrade-modal-header">
-        <h2 class="upgrade-modal-title">Upgrade Bill Blue</h2>
-        <p class="upgrade-modal-subtitle">Choose a plan to unlock premium features</p>
+        <h2 class="upgrade-modal-title">Upgrade to Bill Blue Pro</h2>
+        <p class="upgrade-modal-subtitle">Choose a plan to unlock advanced business features</p>
         <button class="btn-modal-close" onclick="closeUpgradeModal()">&times;</button>
       </div>
-      <div class="pricing-grid">
+      <div class="pricing-grid" style="grid-template-columns: repeat(2, 1fr); gap: 24px;">
         <!-- Free Plan -->
-        <div class="pricing-card" id="price-card-free">
+        <div class="pricing-card" id="price-card-free" style="padding: 24px 20px;">
           <div class="plan-header">
             <span class="plan-name">Free Plan</span>
-            <div class="plan-price">₹0<span>/month</span></div>
+            <div class="plan-price">₹0<span>/forever</span></div>
           </div>
           <ul class="plan-features">
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 10 invoices/month</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Basic invoice features</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Unlimited</strong> invoices</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> PDF &amp; JPG Downloads</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> QR Invoice Payments</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> WhatsApp Share Loops</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Customers Directory</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Business Profile History</li>
           </ul>
           <button class="btn btn-secondary plan-btn" id="btn-select-free" onclick="purchasePlan('free')">Current Plan</button>
         </div>
         
-        <!-- Basic Plan -->
-        <div class="pricing-card pricing-card-featured" id="price-card-basic">
-          <div class="plan-header">
-            <span class="plan-name">Basic Plan</span>
-            <div class="plan-price">₹99<span>/year</span></div>
-          </div>
-          <ul class="plan-features">
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Unlimited invoices</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> PDF Download</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> JPG Download</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> WhatsApp Sharing</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> QR Payments</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Business Branding</li>
-          </ul>
-          <button class="btn btn-primary plan-btn" id="btn-select-basic" onclick="purchasePlan('basic')">Upgrade Basic</button>
-        </div>
-        
         <!-- Pro Plan -->
-        <div class="pricing-card" id="price-card-pro">
+        <div class="pricing-card pricing-card-featured" id="price-card-pro" style="padding: 24px 20px;">
           <div class="plan-header">
-            <span class="plan-name">Pro Plan</span>
+            <span class="plan-name" style="color: var(--primary-med);">Pro Plan</span>
             <div class="plan-price">₹299<span>/year</span></div>
           </div>
           <ul class="plan-features">
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Analytics Dashboard</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Customer Management</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Advanced Reports</li>
-            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Premium Insights</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Advanced</strong> Analytics Dashboard</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Customer</strong> Insights &amp; Metrics</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Khata</strong> Shop Credit Book</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Inventory</strong> &amp; Low Stock Alerts</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> <strong>Remove</strong> Bill Blue Branding</li>
+            <li><svg class="feat-yes" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Export Premium Reports</li>
           </ul>
-          <button class="btn btn-secondary plan-btn" id="btn-select-pro" onclick="purchasePlan('pro')">Upgrade Pro</button>
+          <button class="btn btn-primary plan-btn" id="btn-select-pro" onclick="purchasePlan('pro')">Upgrade Now</button>
         </div>
       </div>
       
@@ -953,8 +991,8 @@
         
         <div style="background: var(--bg-warm); padding: 18px; border-radius: var(--radius); margin-bottom: 20px; border: 1px solid var(--border);">
           <span style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-sec); letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Selected Plan</span>
-          <h3 id="upi-modal-plan-name" style="font-size: 1.25rem; font-weight: 800; color: var(--text); margin: 0;">Basic Plan</h3>
-          <div id="upi-modal-plan-price" style="font-size: 1.65rem; font-weight: 800; color: var(--primary-med); margin-top: 2px;">₹99<span>/year</span></div>
+          <h3 id="upi-modal-plan-name" style="font-size: 1.25rem; font-weight: 800; color: var(--text); margin: 0;">Pro Plan</h3>
+          <div id="upi-modal-plan-price" style="font-size: 1.65rem; font-weight: 800; color: var(--primary-med); margin-top: 2px;">₹299<span>/year</span></div>
         </div>
         
         <!-- Visual QR Code Container -->
@@ -1165,27 +1203,29 @@
         </div>
       </div>
 
-      <!-- STEP 3: Invoice Preferences -->
+      <!-- STEP 3: Logo Upload -->
       <div class="onboard-step-panel" id="onboard-panel-3" style="display:none; text-align:left;">
-        <h3 style="font-size:1rem; font-weight:800; color:var(--text); margin-bottom:6px; margin-top:0;">Invoice &amp; Tax Preferences</h3>
-        <p style="font-size:0.75rem; color:var(--text-sec); margin-bottom:18px; line-height:1.4; margin-top:0;">Configure how tax calculations and numbering layouts should format by default.</p>
-        <div class="form-grid" style="display:grid; grid-template-columns:1fr; gap:12px;">
-          <div class="form-group" style="background:var(--bg-warm); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border); box-sizing:border-box;">
-            <label class="toggle-label-large" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin:0;">
-              <input type="checkbox" id="ob-pref-tax-on" checked style="width:18px; height:18px;">
-              <span style="font-size:0.8rem; font-weight:700; color:var(--text);">Enable GST Calculations by Default</span>
-            </label>
-          </div>
-          <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-            <div class="form-group">
-              <label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">Default GST Rate (%)</label>
-              <select id="ob-pref-tax-rate" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box; background:#fff;">
-                <option value="5">5% GST</option><option value="12">12% GST</option><option value="18" selected>18% GST</option><option value="28">28% GST</option>
-              </select>
+        <h3 style="font-size:1rem; font-weight:800; color:var(--text); margin-bottom:6px; margin-top:0;">Upload Business Logo &amp; Signature</h3>
+        <p style="font-size:0.75rem; color:var(--text-sec); margin-bottom:18px; line-height:1.4; margin-top:0;">Personalize your invoices with your company logo and digital signature or seal.</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="upload-zone" onclick="document.getElementById('ob-logo-input').click()" style="border: 2px dashed var(--border); border-radius: var(--radius); padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+            <input type="file" id="ob-logo-input" accept="image/*" onchange="handleOnboardLogoUpload(event)" hidden>
+            <div id="ob-logo-placeholder" class="upload-placeholder" style="text-align:center;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <p style="margin: 6px 0 2px 0; font-size: 0.75rem; font-weight: 700;">Upload Logo</p>
+              <span style="font-size: 0.6rem; color: var(--text-muted);">max 2MB</span>
             </div>
-            <div class="form-group"><label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">Invoice Prefix *</label><input type="text" id="ob-pref-prefix" value="BB-" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;"></div>
+            <img id="ob-logo-img" src="" alt="Logo" style="display:none; max-width: 100%; max-height: 100px; border-radius: var(--radius-sm);">
           </div>
-          <p style="font-size:0.58rem; color:var(--text-muted); line-height:1.3; margin:0;">Selecting "Enable GST" automatically attaches GST percentage inputs on every invoice row and splits calculations into CGST &amp; SGST dynamically in printed bills.</p>
+          <div class="upload-zone" onclick="document.getElementById('ob-sig-input').click()" style="border: 2px dashed var(--border); border-radius: var(--radius); padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+            <input type="file" id="ob-sig-input" accept="image/*" onchange="handleOnboardSignatureUpload(event)" hidden>
+            <div id="ob-sig-placeholder" class="upload-placeholder" style="text-align:center;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto;"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+              <p style="margin: 6px 0 2px 0; font-size: 0.75rem; font-weight: 700;">Upload Signature</p>
+              <span style="font-size: 0.6rem; color: var(--text-muted);">max 2MB</span>
+            </div>
+            <img id="ob-sig-img" src="" alt="Signature" style="display:none; max-width: 100%; max-height: 100px; border-radius: var(--radius-sm);">
+          </div>
         </div>
       </div>
 
@@ -1207,6 +1247,26 @@
     </div>
   </div>
 
+  <!-- ════════ ENTER REFERRAL CODE MODAL ════════ -->
+  <div class="modal-backdrop" id="referral-entry-modal" style="display:none; z-index:1155;">
+    <div class="upgrade-modal-card" style="max-width: 380px; padding: 24px;">
+      <div class="upgrade-modal-header" style="margin-bottom:15px; position:relative;">
+        <h2 class="upgrade-modal-title" style="color:var(--primary-dark); font-size:1.15rem; margin:0;">Enter Referral Code</h2>
+        <button class="btn-modal-close" onclick="closeEnterReferralModal()" style="position:absolute; right:0; top:0; background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-sec);">&times;</button>
+      </div>
+      <div class="form-grid" style="display:grid; grid-template-columns:1fr; gap:12px; text-align:left;">
+        <div class="form-group">
+          <label style="font-size:0.65rem; font-weight:700; margin-bottom:4px; display:block;">Referral Code *</label>
+          <input type="text" id="referral-code-input" placeholder="e.g. BB-ABC12" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box; text-transform: uppercase;">
+        </div>
+      </div>
+      <div style="margin-top:20px; display:flex; gap:10px; border-top:1px solid var(--border); padding-top:16px;">
+        <button class="btn btn-clear" style="flex:1; justify-content:center; height:36px;" onclick="closeEnterReferralModal()">Cancel</button>
+        <button class="btn btn-save" style="flex:1.5; justify-content:center; height:36px; background:#9333ea; border-color:#9333ea;" onclick="submitReferralCode()">Claim Reward</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Global Autocomplete Datalists -->
   <datalist id="products-datalist"></datalist>
   <datalist id="customers-datalist"></datalist>
@@ -1224,7 +1284,7 @@
   
   <!-- Optional build-time production config -->
   <script src="config.js" onerror="this.remove()"></script>
-  <script src="script.js?v=4"></script>
+  <script src="script.js?v=5"></script>
   
   <!-- PWA Bootstrapper -->
   <script>
