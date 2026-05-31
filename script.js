@@ -68,8 +68,7 @@ var THEMES = {
 };
 
 function applyTheme(themeName) {
-  var tName = themeName || 'blue';
-  var theme = THEMES[tName] || THEMES.blue;
+  var theme = THEMES.blue;
   var root = document.documentElement;
   for (var prop in theme) {
     root.style.setProperty(prop, theme[prop]);
@@ -213,7 +212,7 @@ function addItemRow(data) {
   tr.dataset.id = itemCounter;
   tr.innerHTML =
     '<td class="td-sno">' + idx + '</td>' +
-    '<td><input type="text" placeholder="Item name" class="item-name" value="' + escapeAttr(d.name||'') + '"></td>' +
+    '<td><input type="text" placeholder="Item name" class="item-name" list="products-datalist" oninput="handleProductAutocomplete(this)" value="' + escapeAttr(d.name||'') + '"></td>' +
     '<td><input type="text" placeholder="—" class="item-hsn" value="' + escapeAttr(d.hsn||'') + '"></td>' +
     '<td><input type="number" placeholder="1" min="0" class="item-qty td-qty-input" value="' + (d.qty||'') + '" oninput="recalculate()"></td>' +
     '<td><select class="item-unit-select item-unit">' + buildUnitOptions(d.unit||'Nos') + '</select></td>' +
@@ -389,7 +388,7 @@ function saveBusinessProfile() {
   var consentToggle = document.getElementById('settings-consent');
   var p={name:getVal('settings-name'),gst:getVal('settings-gst'),phone:getVal('settings-phone'),email:getVal('settings-email'),
     address:getVal('settings-address'),state:document.getElementById('settings-state').value,
-    theme:document.getElementById('settings-theme').value,
+    theme:'blue',
     bank:getVal('settings-bank'),accHolder:getVal('settings-acc-holder'),accNumber:getVal('settings-acc-number'),
     ifsc:getVal('settings-ifsc'),upi:getVal('settings-upi'),terms:getVal('settings-terms'),
     analyticsConsent: consentToggle ? consentToggle.checked : true,
@@ -470,7 +469,33 @@ function saveInvoice() {
     balanceDue:grand-received,createdAt:editingInvoiceId?((getInvoiceById(editingInvoiceId)||{}).createdAt||Date.now()):Date.now()};
   var all=loadData(KEYS.INVOICES)||[];
   if(editingInvoiceId){var idx=all.findIndex(function(i){return i.id===editingInvoiceId;});if(idx!==-1)all[idx]=inv;else all.push(inv);}else{all.push(inv);}
-  saveData(KEYS.INVOICES,all);showToast('Invoice '+inv.number+' saved!','success');
+  saveData(KEYS.INVOICES,all);
+  
+  // Auto stock depletion tracking
+  var prods = getProducts();
+  items.forEach(function(item) {
+    var found = prods.find(function(p) { return p.name.toLowerCase() === item.name.toLowerCase(); });
+    if (found) {
+      found.stock = Math.max(0, found.stock - item.qty);
+      syncProductToDb(found);
+    }
+  });
+  saveData('billblue_products', prods);
+  if (typeof renderProductsList === 'function') renderProductsList();
+  
+  // Auto update customer dues / ledger records
+  var custs = getCustomers();
+  var foundCust = custs.find(function(c) { return c.name.toLowerCase() === cn.toLowerCase(); });
+  if (foundCust) {
+    if (inv.status === 'pending') {
+      foundCust.balance += inv.balanceDue;
+    }
+    saveData('billblue_customers', custs);
+    syncCustomerToDb(foundCust);
+    if (typeof renderCustomersList === 'function') renderCustomersList();
+  }
+
+  showToast('Invoice '+inv.number+' saved!','success');
   syncSavedInvoice(inv);
   editingInvoiceId=null;document.getElementById('invoice-view-title').textContent='New Invoice';
   navigateTo('dashboard');resetInvoiceForm();
@@ -1328,7 +1353,6 @@ function initializeSandbox() {
 }
 
 function syncUserData(user) {
-  showToast('Restoring session...', '');
   firebaseDb.collection('users').doc(user.uid).get().then(function(doc) {
     if (doc.exists) {
       currentUser = doc.data();
@@ -1446,6 +1470,22 @@ function handleLoggedInState() {
   var userInvs = currentUser.invoicesList || loadData(KEYS.INVOICES) || [];
   saveData(KEYS.INVOICES, userInvs);
   
+  // Load specialized Pro catalog modules
+  if (typeof loadProductsFromFirestore === 'function') loadProductsFromFirestore();
+  else {
+    if (typeof renderProductsList === 'function') renderProductsList();
+  }
+  if (typeof loadCustomersFromFirestore === 'function') loadCustomersFromFirestore();
+  else {
+    if (typeof renderCustomersList === 'function') renderCustomersList();
+  }
+  if (typeof loadKhataFromFirestore === 'function') loadKhataFromFirestore();
+  else {
+    if (typeof renderKhataBookList === 'function') renderKhataBookList();
+  }
+  if (typeof applyPaywalls === 'function') applyPaywalls();
+  if (typeof checkLowStockAlerts === 'function') checkLowStockAlerts();
+  
   var isAdmin = currentUser && currentUser.email && currentUser.email.toLowerCase() === 'admin@billblue.com';
   if (isAdmin) {
     adminAuthorized = true;
@@ -1458,11 +1498,22 @@ function handleLoggedInState() {
   setTodayDate();
   recalculate();
   
-  if (currentUser && currentUser.planType === 'free' && !sessionStorage.getItem('billblue_modal_skipped') && !isAdmin) {
+  // Auto Onboarding popup or banner
+  if (currentUser && !currentUser.onboarded && !isAdmin) {
+    setTimeout(function() {
+      if (typeof openOnboardingWizard === 'function') openOnboardingWizard();
+    }, 1200);
+  } else if (currentUser && currentUser.onboarded === 'skipped' && !isAdmin) {
+    if (typeof showOnboardingBanner === 'function') showOnboardingBanner();
+  }
+  
+  if (currentUser && currentUser.planType === 'free' && !sessionStorage.getItem('billblue_modal_skipped') && !isAdmin && currentUser.onboarded === true) {
     setTimeout(function() {
       openUpgradeModal();
-    }, 1000);
+    }, 2500);
   }
+  
+  if (typeof hideSplashScreen === 'function') hideSplashScreen();
 }
 
 function handleLoggedOutState() {
@@ -1473,6 +1524,7 @@ function handleLoggedOutState() {
   if (sidebarPanel) sidebarPanel.style.display = 'none';
   
   navigateTo('auth');
+  if (typeof hideSplashScreen === 'function') hideSplashScreen();
 }
 
 // ═══════════════════════════════════════════
@@ -1527,13 +1579,19 @@ function handleLogin() {
 }
 
 function handleRegister() {
+  var name = getVal('register-name');
   var company = getVal('register-company');
+  var phone = getVal('register-phone');
   var email = getVal('register-email');
   var password = getVal('register-password');
   var plan = 'free';
   
-  if (!company || !email || !password) {
+  if (!name || !company || !phone || !email || !password) {
     showToast('Please fill all fields', 'error');
+    return;
+  }
+  if (phone.length !== 10 || !/^\d{10}$/.test(phone)) {
+    showToast('Please enter a valid 10-digit mobile phone number', 'error');
     return;
   }
   if (password.length < 6) {
@@ -1550,10 +1608,14 @@ function handleRegister() {
         var profile = {
           uid: cred.user.uid,
           email: email,
+          fullName: name,
+          phoneNumber: phone,
+          companyName: company,
           planType: plan,
           subscriptionExpiry: expiry,
           paymentStatus: 'paid',
-          businessSettings: { name: company },
+          onboarded: false,
+          businessSettings: { name: company, phone: phone },
           invoicesList: []
         };
         return firebaseDb.collection('users').doc(cred.user.uid).set(profile).then(function() {
@@ -1574,9 +1636,13 @@ function handleRegister() {
   
   users[email.toLowerCase()] = {
     password: password,
+    fullName: name,
+    phoneNumber: phone,
+    companyName: company,
     planType: plan,
     subscriptionExpiry: expiry,
-    businessSettings: { name: company },
+    onboarded: false,
+    businessSettings: { name: company, phone: phone },
     invoicesList: []
   };
   saveData('billblue_simulated_users', users);
@@ -1584,10 +1650,14 @@ function handleRegister() {
   currentUser = {
     uid: 'sim_' + generateId(),
     email: email,
+    fullName: name,
+    phoneNumber: phone,
+    companyName: company,
     planType: plan,
     subscriptionExpiry: expiry,
     paymentStatus: 'paid',
-    businessSettings: { name: company },
+    onboarded: false,
+    businessSettings: { name: company, phone: phone },
     invoicesList: []
   };
   saveData('billblue_current_user', currentUser);
@@ -2183,3 +2253,975 @@ function triggerPWAInstall() {
     updatePWAInstallUI();
   });
 }
+
+// ═══════════════════════════════════════════
+//  SaaS SPRINT UPGRADE MODULES
+// ═══════════════════════════════════════════
+
+var currentOnboardStep = 1;
+var activeProfileCustomerId = null;
+
+// Helper: Save user profile changes
+function saveUserDataToDbOrSim(user) {
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid).set(user)
+      .catch(function(e) { console.error("Firestore user save failed", e); });
+  } else {
+    saveData('billblue_current_user', user);
+    var users = loadData('billblue_simulated_users') || {};
+    if (user.email) {
+      var email = user.email.toLowerCase();
+      if (users[email]) {
+        users[email].onboarded = user.onboarded;
+        users[email].planType = user.planType;
+        users[email].subscriptionStatus = user.subscriptionStatus;
+        users[email].subscriptionExpiry = user.subscriptionExpiry;
+        saveData('billblue_simulated_users', users);
+      }
+    }
+  }
+}
+
+// ── Onboarding Wizard ──
+function openOnboardingWizard() {
+  currentOnboardStep = 1;
+  showOnboardStep(1);
+  var modal = document.getElementById('onboarding-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeOnboardingWizard() {
+  var modal = document.getElementById('onboarding-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function showOnboardStep(step) {
+  document.querySelectorAll('.onboard-step-panel').forEach(function(panel, idx) {
+    panel.style.display = (idx + 1) === step ? 'block' : 'none';
+  });
+  document.querySelectorAll('.onboard-indicator').forEach(function(ind, idx) {
+    ind.classList.toggle('active', (idx + 1) === step);
+    ind.style.background = (idx + 1) <= step ? 'var(--primary)' : 'var(--border)';
+  });
+  var indicatorText = document.getElementById('onboard-step-indicator');
+  if (indicatorText) indicatorText.textContent = 'Step ' + step + ' of 4';
+  
+  var btnPrev = document.getElementById('onboard-btn-prev');
+  var btnSkip = document.getElementById('onboard-btn-skip');
+  var btnNext = document.getElementById('onboard-btn-next');
+  
+  if (btnPrev) btnPrev.style.display = step > 1 ? 'block' : 'none';
+  if (btnSkip) btnSkip.style.display = step < 4 ? 'block' : 'none';
+  if (btnNext) {
+    btnNext.textContent = step === 4 ? 'Start Using Bill Blue' : 'Continue';
+  }
+}
+
+function progressOnboarding(offset) {
+  var nextStep = currentOnboardStep + offset;
+  if (nextStep < 1) return;
+  if (nextStep > 4) {
+    completeOnboarding();
+    return;
+  }
+  
+  if (offset > 0) {
+    if (currentOnboardStep === 1) {
+      var bizName = getVal('ob-biz-name');
+      var bizPhone = getVal('ob-biz-phone');
+      if (!bizName || !bizPhone) {
+        showToast('Business Name and Phone Number are mandatory', 'error');
+        if (!bizName) highlightField(document.getElementById('ob-biz-name'));
+        if (!bizPhone) highlightField(document.getElementById('ob-biz-phone'));
+        return;
+      }
+    }
+    if (currentOnboardStep === 2) {
+      var bizUpi = getVal('ob-pay-upi');
+      if (!bizUpi) {
+        showToast('UPI ID is mandatory for payment setup', 'error');
+        highlightField(document.getElementById('ob-pay-upi'));
+        return;
+      }
+    }
+  }
+  
+  currentOnboardStep = nextStep;
+  showOnboardStep(nextStep);
+}
+
+function skipOnboarding() {
+  if (currentUser) {
+    currentUser.onboarded = 'skipped';
+    saveUserDataToDbOrSim(currentUser);
+  }
+  closeOnboardingWizard();
+  showOnboardingBanner();
+  showToast('Setup skipped! Reminders will show on dashboard.', 'info');
+}
+
+function completeOnboarding() {
+  var p = loadData(KEYS.BUSINESS) || {};
+  p.name = getVal('ob-biz-name');
+  p.phone = getVal('ob-biz-phone');
+  p.email = getVal('ob-biz-email');
+  p.gst = getVal('ob-biz-gst');
+  p.address = getVal('ob-biz-address');
+  
+  p.upi = getVal('ob-pay-upi');
+  p.bank = getVal('ob-pay-bank');
+  p.ifsc = getVal('ob-pay-ifsc');
+  p.accNumber = getVal('ob-pay-acc');
+  p.accHolder = getVal('ob-pay-holder');
+  
+  var taxOn = document.getElementById('ob-pref-tax-on').checked;
+  var taxRate = parseFloat(document.getElementById('ob-pref-tax-rate').value) || 18;
+  var prefix = getVal('ob-pref-prefix') || 'BB-';
+  
+  p.taxOnDefault = taxOn;
+  p.taxRateDefault = taxRate;
+  p.invoicePrefix = prefix;
+  p.theme = 'blue';
+  
+  saveData(KEYS.BUSINESS, p);
+  syncSavedProfile(p);
+  
+  var toggleEl = document.getElementById('tax-toggle');
+  if (toggleEl) {
+    toggleEl.checked = taxOn;
+    toggleTax();
+  }
+  if (taxRateInput) taxRateInput.value = taxRate;
+  
+  if (currentUser) {
+    currentUser.onboarded = true;
+    saveUserDataToDbOrSim(currentUser);
+  }
+  
+  var banner = document.getElementById('onboarding-alert-banner');
+  if (banner) banner.remove();
+  
+  closeOnboardingWizard();
+  applyBusinessToInvoice();
+  loadSettingsForm();
+  showToast('Workspace successfully configured!', 'success');
+}
+
+function showOnboardingBanner() {
+  var wrapper = document.getElementById('dashboard-wrapper');
+  if (!wrapper) return;
+  var existing = document.getElementById('onboarding-alert-banner');
+  if (existing) existing.remove();
+  
+  if (currentUser && currentUser.onboarded === 'skipped') {
+    var banner = document.createElement('div');
+    banner.id = 'onboarding-alert-banner';
+    banner.className = 'onboarding-banner';
+    banner.style.width = '100%';
+    banner.style.boxSizing = 'border-box';
+    banner.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:12px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div style="text-align:left;">
+            <strong style="color:var(--text); font-size:0.8rem; display:block;">Complete Your Business Profile</strong>
+            <span style="color:var(--text-sec); font-size:0.7rem;">Please complete your onboarding setup to unlock custom invoice branding, dynamic UPI payment routing, and billing preferences.</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-primary" onclick="openOnboardingWizard()" style="height:30px; font-size:0.7rem; padding:0 12px; font-weight:700;">Complete Setup</button>
+          <button class="btn btn-clear" onclick="dismissOnboardingBanner()" style="height:30px; font-size:0.7rem; padding:0 8px;">Dismiss</button>
+        </div>
+      </div>
+    `;
+    wrapper.insertBefore(banner, wrapper.firstChild);
+  }
+}
+
+function dismissOnboardingBanner() {
+  var banner = document.getElementById('onboarding-alert-banner');
+  if (banner) banner.remove();
+}
+
+
+// ── Products Catalog CRUD ──
+function getProducts() {
+  return loadData('billblue_products') || [];
+}
+
+function openProductModal(id) {
+  if (!checkFeatureAccess('analytics')) return;
+  var modal = document.getElementById('product-add-modal');
+  if (!modal) return;
+  
+  var title = document.getElementById('prod-modal-title');
+  var idInput = document.getElementById('prod-id-edit');
+  
+  if (id) {
+    if (title) title.textContent = 'Edit Product Catalog Item';
+    var prods = getProducts();
+    var p = prods.find(function(item) { return item.id === id; });
+    if (p) {
+      if (idInput) idInput.value = p.id;
+      setVal('prod-name', p.name);
+      setVal('prod-category', p.category || '');
+      setVal('prod-hsn', p.hsn || '');
+      document.getElementById('prod-unit').value = p.unit || 'Nos';
+      setVal('prod-price', p.price);
+      document.getElementById('prod-tax').value = p.tax || 18;
+      setVal('prod-stock', p.stock);
+    }
+  } else {
+    if (title) title.textContent = 'Add Product to Catalog';
+    if (idInput) idInput.value = '';
+    setVal('prod-name', '');
+    setVal('prod-category', '');
+    setVal('prod-hsn', '');
+    document.getElementById('prod-unit').value = 'Nos';
+    setVal('prod-price', '');
+    document.getElementById('prod-tax').value = '18';
+    setVal('prod-stock', '50');
+  }
+  
+  modal.style.display = 'flex';
+}
+
+function closeProductModal() {
+  var modal = document.getElementById('product-add-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function saveProductCatalogItem() {
+  if (!checkFeatureAccess('analytics')) return;
+  var name = getVal('prod-name');
+  var price = parseFloat(getVal('prod-price'));
+  
+  if (!name || isNaN(price) || price < 0) {
+    showToast('Product Name and valid Base Price are mandatory', 'error');
+    if (!name) highlightField(document.getElementById('prod-name'));
+    if (isNaN(price)) highlightField(document.getElementById('prod-price'));
+    return;
+  }
+  
+  var id = getVal('prod-id-edit') || generateId();
+  var prod = {
+    id: id,
+    name: name,
+    category: getVal('prod-category'),
+    hsn: getVal('prod-hsn'),
+    unit: document.getElementById('prod-unit').value,
+    price: price,
+    tax: parseFloat(document.getElementById('prod-tax').value) || 18,
+    stock: parseInt(getVal('prod-stock')) || 0
+  };
+  
+  var prods = getProducts();
+  var idx = prods.findIndex(function(p) { return p.id === id; });
+  if (idx !== -1) prods[idx] = prod;
+  else prods.push(prod);
+  
+  saveData('billblue_products', prods);
+  syncProductToDb(prod);
+  
+  closeProductModal();
+  renderProductsList();
+  if (typeof checkLowStockAlerts === 'function') checkLowStockAlerts();
+  showToast('Product saved successfully!', 'success');
+}
+
+function editProductItem(id) {
+  openProductModal(id);
+}
+
+function deleteProductItem(id) {
+  if (!checkFeatureAccess('analytics')) return;
+  if (!confirm('Are you sure you want to delete this product from your catalog?')) return;
+  
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid)
+      .collection('products').doc(id).delete()
+      .catch(function(e) { console.error("Firestore product deletion failed", e); });
+  }
+  
+  var prods = getProducts().filter(function(p) { return p.id !== id; });
+  saveData('billblue_products', prods);
+  
+  renderProductsList();
+  if (typeof checkLowStockAlerts === 'function') checkLowStockAlerts();
+  showToast('Product removed from catalog', 'warning');
+}
+
+function renderProductsList() {
+  var prods = getProducts();
+  var query = getVal('product-search').toLowerCase();
+  var tbody = document.getElementById('products-table-body');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  
+  var total = prods.length;
+  var sumPrice = 0;
+  var lowStock = 0;
+  
+  var filtered = prods.filter(function(p) {
+    if (p.price) sumPrice += p.price;
+    if (p.stock <= 5) lowStock++;
+    return p.name.toLowerCase().includes(query) || 
+           (p.category && p.category.toLowerCase().includes(query)) || 
+           (p.hsn && p.hsn.toLowerCase().includes(query));
+  });
+  
+  var avgPrice = total > 0 ? (sumPrice / total) : 0;
+  
+  var totalEl = document.getElementById('prod-stat-total');
+  if (totalEl) totalEl.textContent = total;
+  var avgEl = document.getElementById('prod-stat-average');
+  if (avgEl) avgEl.textContent = formatINR(avgPrice);
+  var lowEl = document.getElementById('prod-stat-low-stock');
+  if (lowEl) lowEl.textContent = lowStock;
+  
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted); font-weight: 500;">No products found in catalog.</td></tr>';
+    return;
+  }
+  
+  filtered.forEach(function(p) {
+    var tr = document.createElement('tr');
+    var stockColor = p.stock <= 5 ? '#ef4444' : 'var(--text-sec)';
+    var stockWeight = p.stock <= 5 ? '700' : '500';
+    
+    tr.innerHTML = `
+      <td style="font-weight:600; color:var(--text);">${escapeHtml(p.name)}</td>
+      <td>${escapeHtml(p.category || '—')}</td>
+      <td style="text-align:center; font-family:monospace; font-weight:600;">${escapeHtml(p.hsn || '—')}</td>
+      <td style="text-align:center;">${escapeHtml(p.unit || 'Nos')}</td>
+      <td style="text-align:right; font-weight:700; font-variant-numeric:tabular-nums; color:var(--text);">${formatINR(p.price)}</td>
+      <td style="text-align:center; font-weight:600; color:var(--primary-med);">${p.tax}%</td>
+      <td style="text-align:center; color:${stockColor}; font-weight:${stockWeight}; font-variant-numeric:tabular-nums;">${p.stock}</td>
+      <td style="text-align:center;">
+        <button class="btn-link" style="margin-right:8px;" onclick="editProductItem('${p.id}')">Edit</button>
+        <button class="btn-danger-ghost" onclick="deleteProductItem('${p.id}')" style="display:inline-flex;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  populateProductsDatalist();
+}
+
+function populateProductsDatalist() {
+  var datalist = document.getElementById('products-datalist');
+  if (!datalist) return;
+  datalist.innerHTML = '';
+  var prods = getProducts();
+  prods.forEach(function(p) {
+    var opt = document.createElement('option');
+    opt.value = p.name;
+    datalist.appendChild(opt);
+  });
+}
+
+function handleProductAutocomplete(input) {
+  var name = input.value.trim();
+  var prods = getProducts();
+  var found = prods.find(function(p) { return p.name.toLowerCase() === name.toLowerCase(); });
+  if (found) {
+    var row = input.closest('tr');
+    var rateInput = row.querySelector('.item-rate');
+    var hsnInput = row.querySelector('.item-hsn');
+    var unitSelect = row.querySelector('.item-unit');
+    
+    if (rateInput) rateInput.value = found.price;
+    if (hsnInput) hsnInput.value = found.hsn || '';
+    if (unitSelect) unitSelect.value = found.unit || 'Nos';
+    
+    recalculate();
+  }
+}
+
+function syncProductToDb(prod) {
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid)
+      .collection('products').doc(prod.id).set(prod)
+      .catch(function(e) { console.error("Firestore product sync failed", e); });
+  }
+}
+
+function loadProductsFromFirestore() {
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid)
+      .collection('products').get().then(function(snap) {
+        var prods = [];
+        snap.forEach(function(doc) { prods.push(doc.data()); });
+        saveData('billblue_products', prods);
+        renderProductsList();
+        populateProductsDatalist();
+      });
+  }
+}
+
+
+// ── Customer Management Profiles CRUD ──
+function getCustomers() {
+  return loadData('billblue_customers') || [];
+}
+
+function openCustomerModal(id) {
+  if (!checkFeatureAccess('customers')) return;
+  var modal = document.getElementById('customer-add-modal');
+  if (!modal) return;
+  
+  var title = document.getElementById('cust-modal-title');
+  var idInput = document.getElementById('cust-id-edit');
+  var balanceGroup = document.getElementById('opening-balance-group');
+  
+  if (id) {
+    if (title) title.textContent = 'Edit Customer Profile';
+    if (balanceGroup) balanceGroup.style.display = 'none';
+    var custs = getCustomers();
+    var c = custs.find(function(cust) { return cust.id === id; });
+    if (c) {
+      if (idInput) idInput.value = c.id;
+      setVal('cust-name', c.name);
+      setVal('cust-phone', c.phone);
+      setVal('cust-address', c.address || '');
+    }
+  } else {
+    if (title) title.textContent = 'Add Customer Profile';
+    if (balanceGroup) balanceGroup.style.display = 'block';
+    if (idInput) idInput.value = '';
+    setVal('cust-name', '');
+    setVal('cust-phone', '');
+    setVal('cust-address', '');
+    setVal('cust-opening-balance', '0');
+  }
+  
+  modal.style.display = 'flex';
+}
+
+function closeCustomerModal() {
+  var modal = document.getElementById('customer-add-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function saveCustomerDirectoryItem() {
+  if (!checkFeatureAccess('customers')) return;
+  var name = getVal('cust-name');
+  var phone = getVal('cust-phone');
+  
+  if (!name || !phone || phone.length !== 10 || !/^\d{10}$/.test(phone)) {
+    showToast('Customer Name and valid 10-digit mobile number are mandatory', 'error');
+    if (!name) highlightField(document.getElementById('cust-name'));
+    if (!phone) highlightField(document.getElementById('cust-phone'));
+    return;
+  }
+  
+  var id = getVal('cust-id-edit') || generateId();
+  var isEdit = !!getVal('cust-id-edit');
+  
+  var custs = getCustomers();
+  var cust = {
+    id: id,
+    name: name,
+    phone: phone,
+    address: getVal('cust-address'),
+    balance: isEdit ? 0 : (parseFloat(getVal('cust-opening-balance')) || 0),
+    createdAt: Date.now()
+  };
+  
+  var idx = custs.findIndex(function(c) { return c.id === id; });
+  if (idx !== -1) {
+    cust.balance = custs[idx].balance; // Keep existing balance
+    custs[idx] = cust;
+  } else {
+    custs.push(cust);
+  }
+  
+  saveData('billblue_customers', custs);
+  syncCustomerToDb(cust);
+  
+  closeCustomerModal();
+  renderCustomersList();
+  showToast('Customer Profile saved!', 'success');
+}
+
+function deleteCustomerItem(id) {
+  if (!checkFeatureAccess('customers')) return;
+  if (!confirm('Warning: Deleting this customer will delete their complete Khata Book history! Continue?')) return;
+  
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid)
+      .collection('customers').doc(id).delete()
+      .catch(function(e) { console.error("Firestore customer deletion failed", e); });
+  }
+  
+  var custs = getCustomers().filter(function(c) { return c.id !== id; });
+  saveData('billblue_customers', custs);
+  
+  // Clean related Khata transactions too
+  var txs = getKhataTransactions().filter(function(t) { return t.customerId !== id; });
+  saveData('billblue_khata_transactions', txs);
+  
+  renderCustomersList();
+  renderKhataBookList();
+  showToast('Customer Profile deleted', 'warning');
+}
+
+function renderCustomersList() {
+  var custs = getCustomers();
+  var query = getVal('customer-search').toLowerCase();
+  var tbody = document.getElementById('customers-table-body');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  
+  var total = custs.length;
+  var receivables = 0;
+  var debtorsCount = 0;
+  
+  var filtered = custs.filter(function(c) {
+    if (c.balance > 0) {
+      receivables += c.balance;
+      debtorsCount++;
+    }
+    return c.name.toLowerCase().includes(query) || 
+           c.phone.toLowerCase().includes(query) || 
+           (c.address && c.address.toLowerCase().includes(query));
+  });
+  
+  var totEl = document.getElementById('cust-stat-total');
+  if (totEl) totEl.textContent = total;
+  var recEl = document.getElementById('cust-stat-receivables');
+  if (recEl) recEl.textContent = formatINR(receivables);
+  var activeEl = document.getElementById('cust-stat-active-debtors');
+  if (activeEl) activeEl.textContent = debtorsCount;
+  
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted); font-weight: 500;">No customers found in directory.</td></tr>';
+    return;
+  }
+  
+  filtered.forEach(function(c) {
+    var tr = document.createElement('tr');
+    var balColor = c.balance > 0 ? '#ef4444' : 'var(--text-sec)';
+    var balWeight = c.balance > 0 ? '700' : '500';
+    
+    tr.innerHTML = `
+      <td style="font-weight:600; color:var(--text);">${escapeHtml(c.name)}</td>
+      <td style="font-variant-numeric:tabular-nums;">${escapeHtml(c.phone)}</td>
+      <td>${escapeHtml(c.address || '—')}</td>
+      <td style="text-align:right; color:${balColor}; font-weight:${balWeight}; font-variant-numeric:tabular-nums;">${formatINR(c.balance)}</td>
+      <td style="text-align:center;">
+        <button class="btn-link" style="margin-right:8px;" onclick="openCustomerProfile('${c.id}')">View Profile</button>
+        <button class="btn-danger-ghost" onclick="deleteCustomerItem('${c.id}')" style="display:inline-flex;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  populateCustomersDatalist();
+}
+
+function handleCustomerAutocomplete(input) {
+  var name = input.value.trim();
+  var custs = getCustomers();
+  var found = custs.find(function(c) { return c.name.toLowerCase() === name.toLowerCase(); });
+  if (found) {
+    var phoneInput = document.getElementById('customer-phone');
+    var addressInput = document.getElementById('customer-address');
+    
+    if (phoneInput) phoneInput.value = found.phone || '';
+    if (addressInput) addressInput.value = found.address || '';
+  }
+}
+
+function syncCustomerToDb(cust) {
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid)
+      .collection('customers').doc(cust.id).set(cust)
+      .catch(function(e) { console.error("Firestore customer sync failed", e); });
+  }
+}
+
+function loadCustomersFromFirestore() {
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid)
+      .collection('customers').get().then(function(snap) {
+        var custs = [];
+        snap.forEach(function(doc) { custs.push(doc.data()); });
+        saveData('billblue_customers', custs);
+        renderCustomersList();
+        populateCustomersDatalist();
+      });
+  }
+}
+
+
+// ── Khata Credit Book Ledger ──
+function getKhataTransactions() {
+  return loadData('billblue_khata_transactions') || [];
+}
+
+function openCustomerProfile(id) {
+  var custs = getCustomers();
+  var c = custs.find(function(cust) { return cust.id === id; });
+  if (!c) return;
+  
+  activeProfileCustomerId = id;
+  document.getElementById('customers-list-viewport').style.display = 'none';
+  document.getElementById('customers-profile-viewport').style.display = 'block';
+  
+  document.getElementById('profile-cust-name').textContent = c.name;
+  document.getElementById('profile-cust-meta').textContent = 'Phone: ' + c.phone + ' | Address: ' + (c.address || '—');
+  document.getElementById('profile-pending-dues').textContent = formatINR(c.balance);
+  if (c.balance > 0) {
+    document.getElementById('profile-pending-dues').style.color = '#ef4444';
+  } else {
+    document.getElementById('profile-pending-dues').style.color = 'var(--text)';
+  }
+  
+  // Purchases calculations
+  var allInvoices = loadData(KEYS.INVOICES) || [];
+  var customerInvoices = allInvoices.filter(function(inv) {
+    return inv.customerName && inv.customerName.toLowerCase() === c.name.toLowerCase();
+  });
+  
+  var totalPurchased = 0;
+  var lastOrderDate = '—';
+  var sortedInvs = customerInvoices.slice().sort(function(a,b) { return new Date(b.date) - new Date(a.date); });
+  if (sortedInvs.length > 0) {
+    lastOrderDate = sortedInvs[0].date;
+  }
+  customerInvoices.forEach(function(inv) {
+    totalPurchased += inv.grandTotal || inv.total || 0;
+  });
+  
+  document.getElementById('profile-total-purchased').textContent = formatINR(totalPurchased);
+  document.getElementById('profile-last-order-date').textContent = lastOrderDate;
+  
+  // Profile invoice list
+  var invTbody = document.getElementById('profile-invoices-tbody');
+  invTbody.innerHTML = '';
+  if (customerInvoices.length === 0) {
+    invTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:12px; color:var(--text-muted); font-weight:500;">No billing records found.</td></tr>';
+  } else {
+    customerInvoices.forEach(function(inv) {
+      var tr = document.createElement('tr');
+      var bc = inv.status === 'paid' ? 'badge-paid' : 'badge-pending';
+      tr.innerHTML = `
+        <td style="font-weight:600; color:var(--text);">${escapeHtml(inv.number)}</td>
+        <td style="font-variant-numeric:tabular-nums;">${escapeHtml(inv.date)}</td>
+        <td style="text-align:right; font-weight:700; font-variant-numeric:tabular-nums;">${formatINR(inv.grandTotal||inv.total||0)}</td>
+        <td style="text-align:center;"><span class="badge ${bc}">${inv.status === 'paid' ? 'Paid' : 'Pending'}</span></td>
+      `;
+      invTbody.appendChild(tr);
+    });
+  }
+  
+  // Ledger logs
+  var khataTbody = document.getElementById('profile-khata-tbody');
+  khataTbody.innerHTML = '';
+  var txs = getKhataTransactions().filter(function(tx) { return tx.customerId === id; });
+  
+  if (txs.length === 0) {
+    khataTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:12px; color:var(--text-muted); font-weight:500;">No ledger logs registered.</td></tr>';
+  } else {
+    txs.forEach(function(tx) {
+      var tr = document.createElement('tr');
+      var typeLabel = tx.type === 'payment' ? 'Receive (Paid)' : 'Credit (Debt)';
+      var typeColor = tx.type === 'payment' ? '#10b981' : '#ef4444';
+      tr.innerHTML = `
+        <td style="font-variant-numeric:tabular-nums; color:var(--text-sec);">${escapeHtml(tx.date)}</td>
+        <td style="color:${typeColor}; font-weight:700; font-size:0.7rem; text-transform:uppercase;">${typeLabel}</td>
+        <td>${escapeHtml(tx.description || 'Manual Entry')}</td>
+        <td style="text-align:right; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums;">${formatINR(tx.amount)}</td>
+      `;
+      khataTbody.appendChild(tr);
+    });
+  }
+  
+  var reminderBtn = document.getElementById('btn-whatsapp-reminder');
+  if (reminderBtn) {
+    reminderBtn.onclick = function() {
+      sendWhatsAppReminder(c.name, c.balance, c.phone);
+    };
+  }
+}
+
+function openKhataModal(type) {
+  var modal = document.getElementById('khata-transaction-modal');
+  if (!modal) return;
+  
+  document.getElementById('khata-transaction-type').value = type;
+  var title = document.getElementById('khata-modal-title');
+  var btn = document.getElementById('khata-submit-btn');
+  
+  if (type === 'payment') {
+    if (title) title.textContent = 'Add Payment (Receive)';
+    if (btn) {
+      btn.textContent = 'Receive Payment';
+      btn.style.background = '#10b981';
+      btn.style.borderColor = '#10b981';
+    }
+  } else {
+    if (title) title.textContent = 'Give Credit (Debt)';
+    if (btn) {
+      btn.textContent = 'Log Credit Debt';
+      btn.style.background = '#ef4444';
+      btn.style.borderColor = '#ef4444';
+    }
+  }
+  
+  document.getElementById('khata-amount').value = '';
+  document.getElementById('khata-desc').value = '';
+  modal.style.display = 'flex';
+}
+
+function closeKhataModal() {
+  var modal = document.getElementById('khata-transaction-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function saveKhataTransaction() {
+  var type = document.getElementById('khata-transaction-type').value;
+  var amt = parseFloat(getVal('khata-amount'));
+  var desc = getVal('khata-desc');
+  
+  if (isNaN(amt) || amt <= 0) {
+    showToast('Please enter a valid numeric amount', 'error');
+    highlightField(document.getElementById('khata-amount'));
+    return;
+  }
+  
+  var id = generateId();
+  var tx = {
+    id: id,
+    customerId: activeProfileCustomerId,
+    type: type,
+    amount: amt,
+    description: desc,
+    date: getTodayStr()
+  };
+  
+  var txs = getKhataTransactions();
+  txs.push(tx);
+  saveData('billblue_khata_transactions', txs);
+  syncKhataTransactionToDb(tx);
+  
+  // Sync Customer Balance
+  var custs = getCustomers();
+  var cIdx = custs.findIndex(function(c) { return c.id === activeProfileCustomerId; });
+  if (cIdx !== -1) {
+    if (type === 'payment') {
+      custs[cIdx].balance = Math.max(0, custs[cIdx].balance - amt);
+    } else {
+      custs[cIdx].balance += amt;
+    }
+    saveData('billblue_customers', custs);
+    syncCustomerToDb(custs[cIdx]);
+  }
+  
+  closeKhataModal();
+  openCustomerProfile(activeProfileCustomerId);
+  renderKhataBookList();
+  showToast('Khata Book Ledger updated!', 'success');
+}
+
+function renderKhataBookList() {
+  var custs = getCustomers();
+  var tbody = document.getElementById('khata-table-body');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  
+  var totalOutstanding = 0;
+  var debtors = custs.filter(function(c) {
+    if (c.balance > 0) totalOutstanding += c.balance;
+    return c.balance > 0;
+  });
+  
+  var outEl = document.getElementById('khata-stat-total-outstanding');
+  if (outEl) outEl.textContent = formatINR(totalOutstanding);
+  
+  if (!debtors.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted); font-weight: 500;">No active debtors found in Credit Book.</td></tr>';
+    return;
+  }
+  
+  debtors.forEach(function(c) {
+    var tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight:600; color:var(--text);">${escapeHtml(c.name)}</td>
+      <td style="font-variant-numeric:tabular-nums;">${escapeHtml(c.phone)}</td>
+      <td style="text-align:right; color:#ef4444; font-weight:700; font-variant-numeric:tabular-nums;">${formatINR(c.balance)}</td>
+      <td style="text-align:center;">
+        <button class="btn-link" style="margin-right:8px;" onclick="navigateToCustomersAndOpenProfile('${c.id}')">View Details</button>
+        <button class="btn btn-save" style="background:#2563eb; border-color:#2563eb; height:26px; padding:0 8px; font-size:0.65rem; display:inline-flex;" onclick="sendWhatsAppReminder('${c.name}', ${c.balance}, '${c.phone}')">Remind</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function navigateToCustomersAndOpenProfile(id) {
+  navigateTo('customers');
+  openCustomerProfile(id);
+}
+
+function syncKhataTransactionToDb(tx) {
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid)
+      .collection('khata_transactions').doc(tx.id).set(tx)
+      .catch(function(e) { console.error("Firestore khata transaction sync failed", e); });
+  }
+}
+
+function loadKhataFromFirestore() {
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid)
+      .collection('khata_transactions').get().then(function(snap) {
+        var txs = [];
+        snap.forEach(function(doc) { txs.push(doc.data()); });
+        saveData('billblue_khata_transactions', txs);
+        renderKhataBookList();
+      });
+  }
+}
+
+
+// ── WhatsApp Payment Reminders ──
+function sendWhatsAppReminder(name, dues, phone) {
+  var biz = loadData(KEYS.BUSINESS) || {};
+  var bizName = biz.name || 'our business';
+  var msg = "Hello " + name + ",\nThis is a friendly reminder regarding your pending payment of " + formatINR(dues) + " with " + bizName + ". Please clear outstanding dues at your earliest convenience.\n\nThanks,\n" + bizName;
+  
+  var cleanedPhone = phone.replace(/\D/g, '');
+  if (cleanedPhone.length === 10) {
+    cleanedPhone = '91' + cleanedPhone;
+  }
+  
+  var url = "https://api.whatsapp.com/send?phone=" + cleanedPhone + "&text=" + encodeURIComponent(msg);
+  window.open(url, '_blank');
+}
+
+
+// ── Inventory Stock Level Checks ──
+function checkLowStockAlerts() {
+  var prods = getProducts();
+  var lowStock = prods.filter(function(p) { return p.stock <= 5; });
+  var banner = document.getElementById('low-stock-alert-banner');
+  if (banner) banner.remove();
+  
+  var isPro = currentUser && currentUser.planType === 'pro';
+  if (lowStock.length > 0 && isPro) {
+    var names = lowStock.map(function(p) { return p.name + " (" + p.stock + " units)"; }).join(', ');
+    var wrapper = document.getElementById('dashboard-wrapper');
+    if (wrapper) {
+      var alertDiv = document.createElement('div');
+      alertDiv.id = 'low-stock-alert-banner';
+      alertDiv.className = 'onboarding-banner';
+      alertDiv.style.background = '#fffbeb';
+      alertDiv.style.borderColor = '#fef3c7';
+      alertDiv.style.boxSizing = 'border-box';
+      alertDiv.style.width = '100%';
+      alertDiv.style.padding = '12px 16px';
+      alertDiv.style.marginBottom = '20px';
+      
+      alertDiv.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px; text-align:left;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div>
+            <strong style="color:#92400e; font-size:0.78rem; display:block;">Low Stock Alert Warnings</strong>
+            <span style="color:#b45309; font-size:0.7rem;">The following cataloged products have critical low stock <= 5 units: <strong>${escapeHtml(names)}</strong>. Please update inventory.</span>
+          </div>
+        </div>
+      `;
+      wrapper.insertBefore(alertDiv, wrapper.firstChild);
+    }
+  }
+}
+
+
+// ── Advanced Feature Paywall System ──
+function applyPaywalls() {
+  var isPro = currentUser && currentUser.planType === 'pro';
+  
+  // 1. Dashboard Blur/Lock
+  var wrap = document.getElementById('dashboard-wrapper');
+  var paywall = document.getElementById('dashboard-paywall');
+  if (wrap && paywall) {
+    if (isPro) {
+      wrap.classList.remove('restricted-blur');
+      paywall.style.display = 'none';
+    } else {
+      wrap.classList.add('restricted-blur');
+      paywall.style.display = 'flex';
+    }
+  }
+  
+  // 2. Products paywall
+  toggleSectionPaywall('view-products', isPro, 'Unlock Products Catalog', 'Manage products, units, tax rates, and automate billing item selection with the Pro Plan.');
+  
+  // 3. Customers paywall
+  toggleSectionPaywall('view-customers', isPro, 'Unlock Customer Profiles', 'Track purchase histories, order metrics, and auto-populate customer details on invoices with the Pro Plan.');
+  
+  // 4. Khata Book paywall
+  toggleSectionPaywall('view-khata', isPro, 'Unlock Khata Credit Ledger', 'Track active debtor balances, manual payments, credit dues, and send WhatsApp payment notifications with the Pro Plan.');
+}
+
+function toggleSectionPaywall(sectionId, isPro, title, desc) {
+  var section = document.getElementById(sectionId);
+  if (!section) return;
+  
+  var paywallId = sectionId + '-paywall';
+  var existingPaywall = document.getElementById(paywallId);
+  
+  if (isPro) {
+    if (existingPaywall) existingPaywall.style.display = 'none';
+    section.querySelectorAll(':not(#' + paywallId + ')').forEach(function(el) {
+      el.classList.remove('restricted-blur');
+    });
+  } else {
+    section.style.position = 'relative';
+    section.querySelectorAll(':not(#' + paywallId + ')').forEach(function(el) {
+      el.classList.add('restricted-blur');
+    });
+    
+    if (!existingPaywall) {
+      existingPaywall = document.createElement('div');
+      existingPaywall.id = paywallId;
+      existingPaywall.className = 'paywall-overlay';
+      existingPaywall.style.background = 'rgba(240, 242, 245, 0.75)';
+      existingPaywall.innerHTML = `
+        <div class="paywall-card">
+          <div class="paywall-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h2 class="paywall-title">${title}</h2>
+          <p class="paywall-subtitle">${desc}</p>
+          <button class="btn btn-primary" onclick="openUpgradeModal()">Upgrade to Pro (₹299/yr)</button>
+        </div>
+      `;
+      section.appendChild(existingPaywall);
+    }
+    existingPaywall.style.display = 'flex';
+  }
+}
+
+// Hide App initialization loader screen smoothly
+function hideSplashScreen() {
+  var splash = document.getElementById('app-splash-screen');
+  if (splash) {
+    splash.style.opacity = '0';
+    splash.style.transform = 'scale(0.96)';
+    splash.style.pointerEvents = 'none';
+    setTimeout(function() {
+      splash.remove();
+    }, 400);
+  }
+}
+

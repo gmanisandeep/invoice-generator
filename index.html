@@ -29,11 +29,21 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
   <!-- Razorpay Checkout Integration -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
+
+  <!-- Premium App Initialization Splash Screen -->
+  <div id="app-splash-screen" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #f0f2f5; z-index: 10000; display: flex; align-items: center; justify-content: center; flex-direction: column; transition: opacity 0.4s ease, transform 0.4s ease;">
+    <div style="width: 72px; height: 72px; border-radius: 18px; background: linear-gradient(135deg, #1e40af, #1e3a8a); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(30,64,175,0.25); margin-bottom: 20px;">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <h1 style="font-size: 1.45rem; font-weight: 800; color: #111827; margin: 0; letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">Bill Blue</h1>
+    <p style="font-size: 0.8rem; color: #4b5563; margin: 6px 0 0 0; font-weight: 500; font-family: 'Inter', sans-serif;">Professional Billing & ERP Suite</p>
+    <div class="upi-spinner" style="width: 24px; height: 24px; border-width: 3px; margin-top: 32px; border-top-color: #1e40af;"></div>
+  </div>
 
   <!-- Mobile Top Header Bar -->
   <header class="mobile-header" id="mobile-header" style="display:none">
@@ -66,6 +76,18 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
         <span>New Invoice</span>
       </a>
+      <a class="nav-item" data-view="products" onclick="navigateTo('products')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <span>Products</span>
+      </a>
+      <a class="nav-item" data-view="customers" onclick="navigateTo('customers')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Customers</span>
+      </a>
+      <a class="nav-item" data-view="khata" onclick="navigateTo('khata')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Khata Book</span>
+      </a>
       <a class="nav-item" data-view="history" onclick="navigateTo('history')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <span>History</span>
@@ -91,7 +113,7 @@
       </button>
     </div>
     
-    <div class="sidebar-footer"><p>&copy; 2026 Bill Blue</p></div>
+    <div class="sidebar-footer"><p>&copy; 2026 <a href="https://billblue.in" target="_blank" style="color:var(--text-muted); font-weight:600; text-decoration:none; transition:color var(--transition);" onmouseover="this.style.color='var(--primary-med)'" onmouseout="this.style.color='var(--text-muted)'">Powered by Bill Blue</a></p></div>
   </aside>
 
   <!-- ═══════════ MAIN ═══════════ -->
@@ -136,15 +158,23 @@
             <p class="auth-subtitle">Start professional invoicing in seconds</p>
           </div>
           <div class="auth-form-group">
-            <label>Business / Company Name</label>
+            <label>Full Name *</label>
+            <input type="text" id="register-name" placeholder="e.g. Ramesh Kumar">
+          </div>
+          <div class="auth-form-group">
+            <label>Business / Company Name *</label>
             <input type="text" id="register-company" placeholder="e.g. Balaji Wholesalers">
           </div>
           <div class="auth-form-group">
-            <label>Email Address</label>
+            <label>Mobile Phone Number *</label>
+            <input type="tel" id="register-phone" placeholder="e.g. 9876543210" maxlength="10">
+          </div>
+          <div class="auth-form-group">
+            <label>Email Address *</label>
             <input type="email" id="register-email" placeholder="name@company.com">
           </div>
           <div class="auth-form-group">
-            <label>Password</label>
+            <label>Password *</label>
             <input type="password" id="register-password" placeholder="Min 6 characters">
           </div>
           <button class="btn btn-primary btn-auth" onclick="handleRegister()">Create Account</button>
@@ -267,7 +297,7 @@
         <div class="inv-meta-customer">
           <div class="inv-customer-block">
             <h3 class="inv-section-label">Bill To</h3>
-            <input type="text" id="customer-name" class="inv-input inv-input-bold" placeholder="Customer Name">
+            <input type="text" id="customer-name" class="inv-input inv-input-bold" placeholder="Customer Name" list="customers-datalist" oninput="handleCustomerAutocomplete(this)">
             <input type="tel" id="customer-phone" class="inv-input" placeholder="Phone Number">
             <textarea id="customer-address" class="inv-input" placeholder="Address" rows="2"></textarea>
           </div>
@@ -386,7 +416,6 @@
           <div class="form-group"><label>Phone</label><input type="tel" id="settings-phone" placeholder="+91 98765 43210"></div>
           <div class="form-group"><label>Email</label><input type="email" id="settings-email" placeholder="info@business.com"></div>
           <div class="form-group"><label>State</label><select id="settings-state"><option value="">Select State</option><option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Goa</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option><option>Delhi</option><option>Jammu & Kashmir</option><option>Ladakh</option><option>Chandigarh</option><option>Puducherry</option></select></div>
-          <div class="form-group"><label>App Theme Color</label><select id="settings-theme" class="inv-select"><option value="blue">Classic Blue</option><option value="green">Emerald Green</option><option value="purple">Indigo Purple</option><option value="charcoal">Sleek Charcoal</option></select></div>
           <div class="form-group form-group-full"><label>Address</label><textarea id="settings-address" placeholder="Full Business Address" rows="2"></textarea></div>
         </div>
       </div>
@@ -535,6 +564,271 @@
             </tbody>
           </table>
         </div>
+    <!-- ════════ VIEW: PRODUCTS CATALOG ════════ -->
+    <section id="view-products" class="view">
+      <div class="view-header">
+        <div>
+          <h1 class="view-title">Products Catalog</h1>
+          <p class="view-subtitle">Manage items, stock, and default billing rates</p>
+        </div>
+        <button class="btn btn-primary" onclick="openProductModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Product
+        </button>
+      </div>
+
+      <!-- Product Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background: var(--primary-soft); color: var(--primary);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value" id="prod-stat-total">0</span>
+            <span class="stat-label">Total Products</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: #ecfdf5; color: #10b981;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value" id="prod-stat-average">₹0.00</span>
+            <span class="stat-label">Average Base Price</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: #fffbeb; color: #f59e0b;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value" id="prod-stat-low-stock" style="color:#d97706;">0</span>
+            <span class="stat-label">Low Stock Items</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Products Table -->
+      <div class="card table-card" style="padding:0; margin-top:20px; overflow-x:auto;">
+        <div style="padding: 16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:10px;">
+          <h3 style="margin:0; font-size:0.95rem; font-weight:700; color:var(--text);">Cataloged Items</h3>
+          <input type="text" id="product-search" placeholder="🔍 Search products..." style="height:32px; width:220px; padding:0 10px; font-size:0.8rem; border-radius:var(--radius-sm); border:1px solid var(--border);" oninput="renderProductsList()">
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr style="background: var(--bg-warm); border-bottom: 1.5px solid var(--border);">
+              <th style="padding:10px 12px; font-size:0.65rem; text-align:left; color:var(--text-sec);">Item Name</th>
+              <th style="padding:10px 12px; font-size:0.65rem; text-align:left; color:var(--text-sec);">Category</th>
+              <th style="padding:10px 12px; font-size:0.65rem; text-align:center; color:var(--text-sec);">HSN/SAC</th>
+              <th style="padding:10px 12px; font-size:0.65rem; text-align:center; color:var(--text-sec);">Unit</th>
+              <th style="padding:10px 12px; font-size:0.65rem; text-align:right; color:var(--text-sec);">Price (₹)</th>
+              <th style="padding:10px 12px; font-size:0.65rem; text-align:center; color:var(--text-sec);">Tax Rate</th>
+              <th style="padding:10px 12px; font-size:0.65rem; text-align:center; color:var(--text-sec);">Stock</th>
+              <th style="padding:10px 12px; font-size:0.65rem; text-align:center; color:var(--text-sec);">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="products-table-body">
+            <!-- Dynamic -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ════════ VIEW: CUSTOMERS DIRECTORY ════════ -->
+    <section id="view-customers" class="view">
+      <div id="customers-list-viewport" style="display: block;">
+        <div class="view-header">
+          <div>
+            <h1 class="view-title">Customers Directory</h1>
+            <p class="view-subtitle">Manage business contacts and outstanding Khata credits</p>
+          </div>
+          <button class="btn btn-primary" onclick="openCustomerModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Customer
+          </button>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon" style="background: var(--primary-soft); color: var(--primary);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="cust-stat-total">0</span>
+              <span class="stat-label">Total Customers</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background: #fff1f2; color: #f43f5e;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="cust-stat-receivables" style="color:#e11d48;">₹0.00</span>
+              <span class="stat-label">Outstanding Receivables</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background: #eff6ff; color: #3b82f6;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="cust-stat-active-debtors">0</span>
+              <span class="stat-label">Active Debtors</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card table-card" style="padding:0; margin-top:20px; overflow-x:auto;">
+          <div style="padding: 16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:10px;">
+            <h3 style="margin:0; font-size:0.95rem; font-weight:700; color:var(--text);">Customers List</h3>
+            <input type="text" id="customer-search" placeholder="🔍 Search customers..." style="height:32px; width:220px; padding:0 10px; font-size:0.8rem; border-radius:var(--radius-sm); border:1px solid var(--border);" oninput="renderCustomersList()">
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr style="background: var(--bg-warm); border-bottom: 1.5px solid var(--border);">
+                <th style="padding:10px 12px; font-size:0.65rem; text-align:left; color:var(--text-sec);">Customer Details</th>
+                <th style="padding:10px 12px; font-size:0.65rem; text-align:left; color:var(--text-sec);">Contact Number</th>
+                <th style="padding:10px 12px; font-size:0.65rem; text-align:left; color:var(--text-sec);">Address</th>
+                <th style="padding:10px 12px; font-size:0.65rem; text-align:right; color:var(--text-sec);">Pending Balance (Khata)</th>
+                <th style="padding:10px 12px; font-size:0.65rem; text-align:center; color:var(--text-sec);">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="customers-table-body">
+              <!-- Dynamic -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Detailed Customer Profile Page View (Toggled via JS) -->
+      <div id="customers-profile-viewport" style="display: none;">
+        <div class="view-header" style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 20px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <button class="btn btn-clear" style="height:32px; width:32px; padding:0; justify-content:center; border-radius:50%;" onclick="closeCustomerProfile()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            </button>
+            <div>
+              <h1 class="view-title" id="profile-cust-name" style="font-size:1.4rem;">Customer Profile</h1>
+              <p class="view-subtitle" id="profile-cust-meta">Phone: — | Address: —</p>
+            </div>
+          </div>
+          
+          <div style="display:flex; gap:10px; flex-wrap: wrap;">
+            <button class="btn btn-save" style="background:#10b981; border-color:#10b981;" onclick="openKhataModal('payment')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Add Payment (Receive)
+            </button>
+            <button class="btn btn-clear" style="border-color:#ef4444; color:#ef4444; background:none;" onclick="openKhataModal('credit')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Give Credit
+            </button>
+            <button class="btn btn-primary" style="background:#2563eb; border-color:#2563eb;" id="btn-whatsapp-reminder" onclick="">
+              <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style="margin-right:4px;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.458 5.706 1.458h.008c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413"/></svg>
+              Send Reminder
+            </button>
+          </div>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom: 24px;">
+          <div class="stat-card" style="border-left: 4px solid var(--primary);">
+            <div class="stat-content" style="padding-left:0;">
+              <span class="stat-value" id="profile-total-purchased">₹0.00</span>
+              <span class="stat-label">Total Purchased (Invoiced)</span>
+            </div>
+          </div>
+          <div class="stat-card" style="border-left: 4px solid #ef4444;">
+            <div class="stat-content" style="padding-left:0;">
+              <span class="stat-value" id="profile-pending-dues" style="color: #ef4444;">₹0.00</span>
+              <span class="stat-label">Pending Khata Balance</span>
+            </div>
+          </div>
+          <div class="stat-card" style="border-left: 4px solid #10b981;">
+            <div class="stat-content" style="padding-left:0;">
+              <span class="stat-value" id="profile-last-order-date">—</span>
+              <span class="stat-label">Last Order Date</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; flex-wrap:wrap; margin-top:20px;" class="grid-two-mobile">
+          <!-- Left: Invoice History -->
+          <div class="card table-card" style="padding:0; overflow-x:auto;">
+            <div style="padding:16px 20px; border-bottom:1px solid var(--border); font-weight:700; color:var(--text); font-size:0.9rem;">Invoice History</div>
+            <table class="data-table">
+              <thead>
+                <tr style="background:var(--bg-warm); border-bottom:1px solid var(--border);">
+                  <th style="padding:8px 10px; font-size:0.6rem; text-align:left;">Inv No.</th>
+                  <th style="padding:8px 10px; font-size:0.6rem; text-align:left;">Date</th>
+                  <th style="padding:8px 10px; font-size:0.6rem; text-align:right;">Amount (₹)</th>
+                  <th style="padding:8px 10px; font-size:0.6rem; text-align:center;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="profile-invoices-tbody">
+                <!-- dynamic -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Right: Ledger Transactions -->
+          <div class="card table-card" style="padding:0; overflow-x:auto;">
+            <div style="padding:16px 20px; border-bottom:1px solid var(--border); font-weight:700; color:var(--text); font-size:0.9rem;">Khata Ledger Logs</div>
+            <table class="data-table">
+              <thead>
+                <tr style="background:var(--bg-warm); border-bottom:1px solid var(--border);">
+                  <th style="padding:8px 10px; font-size:0.6rem; text-align:left;">Date</th>
+                  <th style="padding:8px 10px; font-size:0.6rem; text-align:left;">Type</th>
+                  <th style="padding:8px 10px; font-size:0.6rem; text-align:left;">Description</th>
+                  <th style="padding:8px 10px; font-size:0.6rem; text-align:right;">Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody id="profile-khata-tbody">
+                <!-- dynamic -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ VIEW: KHATA BOOK LEDGER ════════ -->
+    <section id="view-khata" class="view">
+      <div class="view-header">
+        <div>
+          <h1 class="view-title">Khata Book (Credit Book)</h1>
+          <p class="view-subtitle">Monitor shop debts, log manual credit adjustments, and request quick settlements</p>
+        </div>
+      </div>
+
+      <!-- Receivables Overview -->
+      <div class="stat-card" style="max-width: 480px; margin-bottom: 24px; border-left: 5px solid #ef4444; background: var(--bg-warm);">
+        <div class="stat-icon" style="background:#fff1f2; color:#ef4444; width:44px; height:44px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value" id="khata-stat-total-outstanding" style="color:#ef4444; font-size:1.6rem;">₹0.00</span>
+          <span class="stat-label" style="font-weight:700;">Total Outstanding Shop Debts (Receivables)</span>
+        </div>
+      </div>
+
+      <!-- Debtors Directory Table -->
+      <div class="card table-card" style="padding: 0; overflow-x: auto;">
+        <div style="padding: 16px 20px; border-bottom:1px solid var(--border); font-weight:700; color:var(--text); font-size:0.95rem;">Active Debtors Ledger</div>
+        <table class="data-table">
+          <thead>
+            <tr style="background: var(--bg-warm); border-bottom: 1.5px solid var(--border);">
+              <th style="padding:10px 12px; font-size:0.65rem; text-align:left; color:var(--text-sec);">Debtor (Customer Name)</th>
+              <th style="padding:10px 12px; font-size:0.65rem; text-align:left; color:var(--text-sec);">Phone Number</th>
+              <th style="padding:10px 12px; font-size:0.65rem; text-align:right; color:var(--text-sec);">Pending Debt (₹)</th>
+              <th style="padding:10px 12px; font-size:0.65rem; text-align:center; color:var(--text-sec);">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="khata-table-body">
+            <!-- Dynamic -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
       </div>
     </section>
   </div>
@@ -543,7 +837,8 @@
   <nav class="mobile-nav" id="mobile-nav">
     <a class="mobile-nav-item active" data-view="dashboard" onclick="navigateTo('dashboard')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Home</span></a>
     <a class="mobile-nav-item" data-view="invoice" onclick="navigateTo('invoice')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>Invoice</span></a>
-    <a class="mobile-nav-item" data-view="history" onclick="navigateTo('history')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>History</span></a>
+    <a class="mobile-nav-item" data-view="products" onclick="navigateTo('products')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><span>Products</span></a>
+    <a class="mobile-nav-item" data-view="customers" onclick="navigateTo('customers')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>Customers</span></a>
     <a class="mobile-nav-item" data-view="settings" onclick="navigateTo('settings')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
   </nav>
 
@@ -708,8 +1003,213 @@
         <p id="upi-loading-subtitle" style="font-size: 0.8rem; color: var(--text-sec); text-align: center; max-width: 280px; line-height: 1.4; margin: 0;">Connecting to secure UPI gateway to confirm transaction...</p>
       </div>
 
+  </div>
+
+  <!-- ════════ PRODUCT ADD / EDIT MODAL ════════ -->
+  <div class="modal-backdrop" id="product-add-modal" style="display:none; z-index:1150;">
+    <div class="upgrade-modal-card" style="max-width: 460px; padding: 24px;">
+      <div class="upgrade-modal-header" style="margin-bottom:18px; position:relative;">
+        <h2 class="upgrade-modal-title" id="prod-modal-title" style="color:var(--primary-dark); font-size:1.2rem; margin:0;">Add Product to Catalog</h2>
+        <button class="btn-modal-close" onclick="closeProductModal()" style="position:absolute; right:0; top:0; background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+      <input type="hidden" id="prod-id-edit">
+      <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; text-align:left;">
+        <div class="form-group form-group-full" style="grid-column: span 2;">
+          <label style="font-size:0.65rem; font-weight:700;">Product Name *</label>
+          <input type="text" id="prod-name" placeholder="e.g. Tomato" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;">
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.65rem; font-weight:700;">Category</label>
+          <input type="text" id="prod-category" placeholder="e.g. Vegetables" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;">
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.65rem; font-weight:700;">HSN / SAC Code</label>
+          <input type="text" id="prod-hsn" placeholder="e.g. 0702" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;">
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.65rem; font-weight:700;">Default Billing Unit</label>
+          <select id="prod-unit" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box; background:#fff;">
+            <option>Nos</option><option>Kg</option><option>Gm</option><option>Ltr</option><option>Ml</option><option>Box</option><option>Pcs</option><option>Mtr</option><option>Bag</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.65rem; font-weight:700;">Default Price (₹) *</label>
+          <input type="number" id="prod-price" placeholder="e.g. 40" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;">
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.65rem; font-weight:700;">GST Tax Rate (%)</label>
+          <select id="prod-tax" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box; background:#fff;">
+            <option value="0">0% (Nil)</option><option value="5">5% GST</option><option value="12">12% GST</option><option value="18" selected>18% GST</option><option value="28">28% GST</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.65rem; font-weight:700;">Initial Stock Qty</label>
+          <input type="number" id="prod-stock" value="50" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="margin-top:20px; display:flex; gap:10px; border-top:1px solid var(--border); padding-top:16px;">
+        <button class="btn btn-clear" style="flex:1; justify-content:center; height:36px;" onclick="closeProductModal()">Cancel</button>
+        <button class="btn btn-save" style="flex:1.5; justify-content:center; height:36px;" onclick="saveProductCatalogItem()">Save Product</button>
+      </div>
     </div>
   </div>
+
+  <!-- ════════ CUSTOMER ADD / EDIT MODAL ════════ -->
+  <div class="modal-backdrop" id="customer-add-modal" style="display:none; z-index:1150;">
+    <div class="upgrade-modal-card" style="max-width: 440px; padding: 24px;">
+      <div class="upgrade-modal-header" style="margin-bottom:18px; position:relative;">
+        <h2 class="upgrade-modal-title" id="cust-modal-title" style="color:var(--primary-dark); font-size:1.2rem; margin:0;">Add Customer Profile</h2>
+        <button class="btn-modal-close" onclick="closeCustomerModal()" style="position:absolute; right:0; top:0; background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+      <input type="hidden" id="cust-id-edit">
+      <div class="form-grid" style="display:grid; grid-template-columns:1fr; gap:12px; text-align:left;">
+        <div class="form-group">
+          <label style="font-size:0.65rem; font-weight:700;">Customer Name *</label>
+          <input type="text" id="cust-name" placeholder="e.g. Ramesh Traders" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;">
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.65rem; font-weight:700;">Contact Phone Number *</label>
+          <input type="tel" id="cust-phone" placeholder="e.g. 9876543210" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;">
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.65rem; font-weight:700;">Address</label>
+          <textarea id="cust-address" placeholder="e.g. Shop 24, Grain Market, Delhi" rows="2" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:0.8rem; box-sizing:border-box;"></textarea>
+        </div>
+        <div class="form-group" id="opening-balance-group">
+          <label style="font-size:0.65rem; font-weight:700;">Opening Credit Balance (Unpaid dues) (₹)</label>
+          <input type="number" id="cust-opening-balance" value="0" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="margin-top:20px; display:flex; gap:10px; border-top:1px solid var(--border); padding-top:16px;">
+        <button class="btn btn-clear" style="flex:1; justify-content:center; height:36px;" onclick="closeCustomerModal()">Cancel</button>
+        <button class="btn btn-save" style="flex:1.5; justify-content:center; height:36px;" onclick="saveCustomerDirectoryItem()">Save Customer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ KHATA LEDGER TRANSACTION MODAL ════════ -->
+  <div class="modal-backdrop" id="khata-transaction-modal" style="display:none; z-index:1160;">
+    <div class="upgrade-modal-card" style="max-width: 380px; padding: 24px;">
+      <div class="upgrade-modal-header" style="margin-bottom:15px; position:relative;">
+        <h2 class="upgrade-modal-title" id="khata-modal-title" style="color:var(--primary-dark); font-size:1.15rem; margin:0;">Add Khata Entry</h2>
+        <button class="btn-modal-close" onclick="closeKhataModal()" style="position:absolute; right:0; top:0; background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+      <input type="hidden" id="khata-transaction-type">
+      <div class="form-grid" style="display:grid; grid-template-columns:1fr; gap:12px; text-align:left;">
+        <div class="form-group">
+          <label style="font-size:0.65rem; font-weight:700;">Amount (₹) *</label>
+          <input type="number" id="khata-amount" placeholder="Enter amount in ₹" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;">
+        </div>
+        <div class="form-group">
+          <label style="font-size:0.65rem; font-weight:700;">Transaction Notes / Description</label>
+          <input type="text" id="khata-desc" placeholder="e.g. Paid in cash, bought items" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="margin-top:20px; display:flex; gap:10px; border-top:1px solid var(--border); padding-top:16px;">
+        <button class="btn btn-clear" style="flex:1; justify-content:center; height:36px;" onclick="closeKhataModal()">Cancel</button>
+        <button class="btn btn-save" style="flex:1.5; justify-content:center; height:36px; background:#10b981; border-color:#10b981;" id="khata-submit-btn" onclick="saveKhataTransaction()">Log Transaction</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ FIRST-TIME BUSINESS ONBOARDING WIZARD MODAL ════════ -->
+  <div class="modal-backdrop" id="onboarding-modal" style="display:none; z-index:1200; background:rgba(30, 64, 175, 0.35); backdrop-filter:blur(8px);">
+    <div class="upgrade-modal-card" style="max-width: 500px; padding: 32px 28px;">
+      
+      <!-- Stepper Header -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <span class="brand-text" style="font-size:1.3rem; font-weight:800; color:var(--primary); display:flex; align-items:center; gap:6px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Bill Blue Setup Wizard
+        </span>
+        <span id="onboard-step-indicator" style="font-size:0.75rem; font-weight:700; background:var(--primary-soft); color:var(--primary); padding:2px 10px; border-radius:12px;">Step 1 of 4</span>
+      </div>
+
+      <!-- Step Stepper Indicators -->
+      <div style="display:flex; gap:6px; margin-bottom:24px;">
+        <div class="onboard-indicator active" id="ind-step-1" style="flex:1; height:4px; border-radius:2px; background:var(--primary); transition:background 0.25s;"></div>
+        <div class="onboard-indicator" id="ind-step-2" style="flex:1; height:4px; border-radius:2px; background:var(--border); transition:background 0.25s;"></div>
+        <div class="onboard-indicator" id="ind-step-3" style="flex:1; height:4px; border-radius:2px; background:var(--border); transition:background 0.25s;"></div>
+        <div class="onboard-indicator" id="ind-step-4" style="flex:1; height:4px; border-radius:2px; background:var(--border); transition:background 0.25s;"></div>
+      </div>
+
+      <!-- STEP 1: Business details -->
+      <div class="onboard-step-panel" id="onboard-panel-1" style="display:block; text-align:left;">
+        <h3 style="font-size:1rem; font-weight:800; color:var(--text); margin-bottom:6px; margin-top:0;">Tell us about your business</h3>
+        <p style="font-size:0.75rem; color:var(--text-sec); margin-bottom:18px; line-height:1.4; margin-top:0;">These details will be displayed on the header of all tax invoices you generate for clients.</p>
+        <div class="form-grid" style="display:grid; grid-template-columns:1fr; gap:12px;">
+          <div class="form-group"><label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">Business Name *</label><input type="text" id="ob-biz-name" placeholder="e.g. Balaji Wholesalers" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;"></div>
+          <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group"><label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">Phone Number *</label><input type="tel" id="ob-biz-phone" placeholder="9876543210" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;"></div>
+            <div class="form-group"><label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">Email Address</label><input type="email" id="ob-biz-email" placeholder="info@balaji.com" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;"></div>
+          </div>
+          <div class="form-group"><label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">GSTIN (GST Identification Number)</label><input type="text" id="ob-biz-gst" placeholder="e.g. 22AAAAA0000A1Z5" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;"></div>
+          <div class="form-group"><label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">Full Shop Address</label><textarea id="ob-biz-address" placeholder="e.g. Shop 44, Grain Market, Delhi" rows="2" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:0.8rem; box-sizing:border-box;"></textarea></div>
+        </div>
+      </div>
+
+      <!-- STEP 2: Payment setup -->
+      <div class="onboard-step-panel" id="onboard-panel-2" style="display:none; text-align:left;">
+        <h3 style="font-size:1rem; font-weight:800; color:var(--text); margin-bottom:6px; margin-top:0;">Add Invoice Payment Options</h3>
+        <p style="font-size:0.75rem; color:var(--text-sec); margin-bottom:18px; line-height:1.4; margin-top:0;">Add your banking and UPI details so clients can scan-to-pay your invoices instantly with zero fee.</p>
+        <div class="form-grid" style="display:grid; grid-template-columns:1fr; gap:12px;">
+          <div class="form-group"><label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">UPI ID (For Customer Payments) *</label><input type="text" id="ob-pay-upi" placeholder="e.g. store@upi" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;"></div>
+          <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group"><label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">Bank Name</label><input type="text" id="ob-pay-bank" placeholder="e.g. State Bank of India" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;"></div>
+            <div class="form-group"><label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">IFSC Code</label><input type="text" id="ob-pay-ifsc" placeholder="e.g. SBIN0001234" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;"></div>
+          </div>
+          <div class="form-grid" style="display:grid; grid-template-columns:1.5fr 1fr; gap:12px;">
+            <div class="form-group"><label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">Account Number</label><input type="text" id="ob-pay-acc" placeholder="e.g. 1234567890" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;"></div>
+            <div class="form-group"><label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">Holder Name</label><input type="text" id="ob-pay-holder" placeholder="e.g. Ramesh Balaji" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Invoice Preferences -->
+      <div class="onboard-step-panel" id="onboard-panel-3" style="display:none; text-align:left;">
+        <h3 style="font-size:1rem; font-weight:800; color:var(--text); margin-bottom:6px; margin-top:0;">Invoice &amp; Tax Preferences</h3>
+        <p style="font-size:0.75rem; color:var(--text-sec); margin-bottom:18px; line-height:1.4; margin-top:0;">Configure how tax calculations and numbering layouts should format by default.</p>
+        <div class="form-grid" style="display:grid; grid-template-columns:1fr; gap:12px;">
+          <div class="form-group" style="background:var(--bg-warm); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border); box-sizing:border-box;">
+            <label class="toggle-label-large" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin:0;">
+              <input type="checkbox" id="ob-pref-tax-on" checked style="width:18px; height:18px;">
+              <span style="font-size:0.8rem; font-weight:700; color:var(--text);">Enable GST Calculations by Default</span>
+            </label>
+          </div>
+          <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">Default GST Rate (%)</label>
+              <select id="ob-pref-tax-rate" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box; background:#fff;">
+                <option value="5">5% GST</option><option value="12">12% GST</option><option value="18" selected>18% GST</option><option value="28">28% GST</option>
+              </select>
+            </div>
+            <div class="form-group"><label style="font-size:0.65rem; font-weight:700; display:block; margin-bottom:4px;">Invoice Prefix *</label><input type="text" id="ob-pref-prefix" value="BB-" style="width:100%; height:36px; padding:0 8px; border:1px solid var(--border); border-radius:var(--radius-sm); box-sizing:border-box;"></div>
+          </div>
+          <p style="font-size:0.58rem; color:var(--text-muted); line-height:1.3; margin:0;">Selecting "Enable GST" automatically attaches GST percentage inputs on every invoice row and splits calculations into CGST &amp; SGST dynamically in printed bills.</p>
+        </div>
+      </div>
+
+      <!-- STEP 4: Finish -->
+      <div class="onboard-step-panel" id="onboard-panel-4" style="display:none; text-align:center; padding:10px 0;">
+        <div style="background:#ecfdf5; color:#10b981; width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto; box-shadow: 0 4px 12px rgba(16,185,129,0.25);">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h3 style="font-size:1.15rem; font-weight:800; color:var(--text); margin-bottom:8px; margin-top:0;">You're All Set!</h3>
+        <p style="font-size:0.8rem; color:var(--text-sec); line-height:1.5; max-width:340px; margin:0 auto 24px auto;">Your professional SaaS billing workspace is fully initialized. You can now catalog products, build customer ledgers, and draft secure invoices.</p>
+      </div>
+
+      <!-- Stepper Controls -->
+      <div style="margin-top:24px; border-top:1px solid var(--border); padding-top:18px; display:flex; justify-content:space-between; gap:10px;">
+        <button class="btn btn-clear" id="onboard-btn-prev" style="display:none; flex:1; justify-content:center; height:38px;" onclick="progressOnboarding(-1)">Back</button>
+        <button class="btn btn-clear" id="onboard-btn-skip" style="flex:1; justify-content:center; height:38px; color:var(--text-sec);" onclick="skipOnboarding()">Skip &amp; Setup Later</button>
+        <button class="btn btn-primary" id="onboard-btn-next" style="flex:1.5; justify-content:center; height:38px;" onclick="progressOnboarding(1)">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Autocomplete Datalists -->
+  <datalist id="products-datalist"></datalist>
+  <datalist id="customers-datalist"></datalist>
 
   <!-- CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -724,7 +1224,7 @@
   
   <!-- Optional build-time production config -->
   <script src="config.js" onerror="this.remove()"></script>
-  <script src="script.js?v=3"></script>
+  <script src="script.js?v=4"></script>
   
   <!-- PWA Bootstrapper -->
   <script>

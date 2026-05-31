@@ -1105,3 +1105,16 @@ input[type="number"]{-moz-appearance:textfield;appearance:textfield}
   .inv-input-bold{font-weight:700!important}
   .inv-table thead th,.inv-title-bar,.inv-words{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+
+/* Onboarding alert banner styles */
+.onboarding-banner {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  box-shadow: var(--shadow-sm);
+  animation: toastIn 0.35s var(--ease) both;
+}
+
