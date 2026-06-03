@@ -1,9 +1,9 @@
-var CACHE_NAME = 'billblue-cache-v6';
+var CACHE_NAME = 'billblue-cache-v7';
 var ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './style.css?v=6',
-  './script.js?v=6',
+  './style.css?v=7',
+  './script.js?v=7',
   './manifest.json',
   './assets/logo.svg',
   
@@ -93,9 +93,12 @@ self.addEventListener('fetch', function(event) {
             return networkResponse;
           })
           .catch(function(err) {
-            // Offline fallbacks
-            console.log('[Service Worker] Fetch failed; returning offline fallback if available.', err);
-            return caches.match('./index.html');
+            console.log('[Service Worker] Fetch failed;', err);
+            // Only return index.html offline fallback for navigation/text/html requests
+            if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
+              return caches.match('./index.html');
+            }
+            return new Response('', { status: 404, statusText: 'Not Found' });
           });
       })
   );

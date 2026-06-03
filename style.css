@@ -1886,6 +1886,17 @@ body.logged-in .desktop-header {
   margin: 0;
 }
 
+.inv-generated {
+  text-align: center;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /* Premium Table Action Buttons (Mark Paid, Mark Pending, Delete) */
 .btn-table-action {
   display: inline-flex;
@@ -2045,6 +2056,82 @@ body.logged-in .desktop-header {
 
 .btn-back-hub {
   display: none;
+}
+
+/* ═══════════════════════════════════════════
+   GLASSMORPHIC MODAL BACKDROPS & CONTAINERS
+   ═══════════════════════════════════════════ */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s var(--ease) both;
+}
+
+.upgrade-modal-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 28px;
+  animation: slideUp 0.3s var(--ease) both;
+}
+
+.upgrade-modal-header {
+  text-align: center;
+  margin-bottom: 24px;
+  padding-right: 20px;
+  position: relative;
+}
+
+.upgrade-modal-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.upgrade-modal-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-sec);
+}
+
+.btn-modal-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition);
+  line-height: 1.2;
+}
+
+.btn-modal-close:hover {
+  color: var(--text);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ═══════════════════════════════════════════
