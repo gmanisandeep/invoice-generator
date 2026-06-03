@@ -2425,3 +2425,509 @@ body.logged-in .desktop-header {
     transform: translateY(20px) scale(0.95);
   }
 }
+
+/* ═══════════════════════════════════════════
+   HYBRID UX REDESIGN STYLES
+   ═══════════════════════════════════════════ */
+
+/* 1. Notion-Style Workspace Switcher Dropdown Header */
+.sidebar-workspace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: var(--transition);
+  border-bottom: 1px solid var(--border-light);
+  min-height: var(--header-h);
+}
+
+.sidebar-workspace-header:hover {
+  background: var(--border-light);
+}
+
+.workspace-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.workspace-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  background: var(--primary);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.workspace-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  text-align: left;
+}
+
+.workspace-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workspace-role {
+  font-size: 0.65rem;
+  color: var(--text-sec);
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+.workspace-dropdown-icon {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-left: 6px;
+  transition: var(--transition);
+}
+
+body.sidebar-collapsed .sidebar-workspace-header {
+  justify-content: center;
+  padding: 14px 0;
+}
+
+body.sidebar-collapsed .workspace-text,
+body.sidebar-collapsed .workspace-dropdown-icon {
+  display: none;
+}
+
+/* Notion-Style Nested Folder Menus */
+.sidebar-folder {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 4px;
+}
+
+.sidebar-folder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: var(--transition);
+  border-radius: var(--radius-sm);
+  margin: 4px 8px 2px;
+}
+
+.sidebar-folder-header:hover {
+  background: var(--border-light);
+  color: var(--text-sec);
+}
+
+body.sidebar-collapsed .sidebar-folder-header {
+  display: none;
+}
+
+.sidebar-folder-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 12px;
+  transition: var(--transition);
+}
+
+body.sidebar-collapsed .sidebar-folder-content {
+  padding-left: 0;
+}
+
+/* 2. Google Pay-Style Bottom Nav */
+.mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 68px !important;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-light);
+  display: none;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 1000;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-sec);
+  text-decoration: none;
+  font-size: 0.7rem;
+  font-weight: 600;
+  flex: 1;
+  height: 100%;
+  cursor: pointer;
+  transition: var(--transition);
+  border: none;
+  background: none;
+  position: relative;
+}
+
+.mobile-nav-item.active {
+  color: var(--primary);
+}
+
+/* GPay Highlighted Center Action */
+.mobile-nav-item.mobile-nav-pay-center {
+  flex: 1.2;
+  height: auto;
+  margin-top: -24px;
+}
+
+.mobile-nav-pay-circle {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+  transition: var(--transition);
+  border: 4px solid var(--white);
+}
+
+.mobile-nav-item.mobile-nav-pay-center:active .mobile-nav-pay-circle {
+  transform: scale(0.9);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+}
+
+.mobile-nav-item.mobile-nav-pay-center span {
+  margin-top: 2px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+/* 3. Stripe-Style Analytics Card Redesign */
+.stripe-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stripe-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  box-shadow: var(--shadow-card);
+  transition: var(--transition);
+  position: relative;
+}
+
+.stripe-card:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-soft);
+  transform: translateY(-1.5px);
+}
+
+.stripe-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.stripe-card-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-sec);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stripe-card-delta {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.stripe-delta-up {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.stripe-delta-down {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.stripe-card-value {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-top: 10px;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.stripe-card-footer {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+/* 4. Razorpay-Style Merchant Shortcuts Grid */
+.razorpay-shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.razorpay-shortcut-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.razorpay-shortcut-card:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  transform: translateY(-0.5px);
+}
+
+.razorpay-shortcut-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-xs);
+  background: var(--bg);
+  color: var(--text-sec);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.razorpay-shortcut-card:hover .razorpay-shortcut-icon {
+  background: var(--white);
+  color: var(--primary);
+}
+
+.razorpay-shortcut-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.razorpay-shortcut-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.razorpay-shortcut-desc {
+  font-size: 0.65rem;
+  color: var(--text-sec);
+  margin-top: 1px;
+}
+
+/* 5. WhatsApp Business Chat Thread Invoices History */
+.whatsapp-chat-list {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.whatsapp-chat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+}
+
+.whatsapp-chat-item:last-child {
+  border-bottom: none;
+}
+
+.whatsapp-chat-item:hover {
+  background: var(--bg);
+}
+
+.chat-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.chat-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.05rem;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+}
+
+.chat-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: var(--success);
+  color: var(--white);
+  font-size: 0.65rem;
+  font-weight: 800;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--white);
+}
+
+.chat-details-block {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  margin-left: 14px;
+}
+
+.chat-customer-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-customer-phone {
+  font-size: 0.75rem;
+  color: var(--text-sec);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chat-last-activity {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.chat-right-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  margin-left: 16px;
+  flex-shrink: 0;
+}
+
+.chat-balance-due {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.chat-balance-due.dues-red {
+  color: var(--danger);
+}
+
+.chat-balance-due.paid-green {
+  color: var(--success);
+}
+
+.chat-quick-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  opacity: 0.3;
+  transition: var(--transition);
+}
+
+.whatsapp-chat-item:hover .chat-quick-actions {
+  opacity: 1;
+}
+
+.chat-action-btn {
+  background: none;
+  border: none;
+  color: var(--text-sec);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.chat-action-btn:hover {
+  background: var(--border-light);
+  color: var(--primary);
+}
+
+.chat-action-btn.btn-wa:hover {
+  color: var(--success);
+  background: var(--success-bg);
+}
+
+@media (max-width: 640px) {
+  .chat-quick-actions {
+    opacity: 1;
+  }
+}
+

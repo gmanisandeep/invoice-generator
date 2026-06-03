@@ -125,7 +125,21 @@ function navigateTo(view) {
       }
     }
   });
-  document.querySelectorAll('.mobile-nav-item').forEach(function(i) { i.classList.toggle('active', i.getAttribute('data-view') === view); });
+  document.querySelectorAll('.mobile-nav-item').forEach(function(i) {
+    var itemV = i.getAttribute('data-view');
+    var itemTab = i.getAttribute('data-settings-tab');
+    if (view === 'settings') {
+      if (itemV === 'settings') {
+        var activePanel = document.querySelector('.hub-panel.active-panel');
+        var activeTab = activePanel ? activePanel.id.replace('hub-panel-', '') : 'profile';
+        i.classList.toggle('active', itemTab === activeTab);
+      } else {
+        i.classList.remove('active');
+      }
+    } else {
+      i.classList.toggle('active', itemV === view);
+    }
+  });
   
   // Update Breadcrumbs in desktop top header
   var breadcrumbsTitle = document.getElementById('desktop-breadcrumbs-title');
@@ -831,12 +845,14 @@ function renderHistory() {
     return;
   }
   
-  grid.style.display = 'grid';
+  grid.className = 'whatsapp-chat-list';
+  grid.style.display = 'flex';
+  grid.style.flexDirection = 'column';
   em.style.display = 'none';
   
   customerList.forEach(function(c) {
     var card = document.createElement('div');
-    card.className = 'history-customer-card';
+    card.className = 'whatsapp-chat-item';
     card.setAttribute('onclick', "openCustomerHistory('" + escapeJsString(c.name) + "')");
     
     var nameParts = c.name.trim().split(/\s+/);
@@ -849,37 +865,55 @@ function renderHistory() {
     }
     if (!initials) initials = '👤';
     
-    var phoneOrActivity = c.phone ? 'Phone: ' + c.phone : (c.lastDate ? 'Active: ' + c.lastDate : 'No activity');
-    var duesColorClass = c.dues > 0 ? 'dues-red' : '';
+    var lastActStr = c.lastDate ? 'Last active: ' + c.lastDate : 'No recent billing';
+    var duesClass = c.dues > 0 ? 'dues-red' : 'paid-green';
+    
+    // Quick actions (WhatsApp reminder and Profile viewer)
+    var waAction = '';
+    if (c.dues > 0 && c.phone) {
+      waAction = `
+        <button class="chat-action-btn btn-wa" onclick="event.stopPropagation(); sendWhatsAppReminder('${escapeJsString(c.name)}', ${c.dues}, '${escapeJsString(c.phone)}')" title="Send WhatsApp Payment Reminder">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </button>
+      `;
+    }
     
     card.innerHTML = `
-      <div class="history-customer-card-header">
-        <div class="history-customer-info-block">
-          <div class="history-customer-avatar">${escapeHtml(initials)}</div>
-          <div class="history-customer-text">
-            <span class="history-customer-name">${escapeHtml(c.name)}</span>
-            <span class="history-customer-phone">${escapeHtml(phoneOrActivity)}</span>
-          </div>
+      <div style="display: flex; align-items: center; min-width: 0; flex: 1;">
+        <div class="chat-avatar-wrapper">
+          <div class="chat-avatar">${escapeHtml(initials)}</div>
+          <span class="chat-badge">${c.invoiceCount}</span>
         </div>
-        <div class="history-customer-stats">
-          <div class="history-customer-stat-col">
-            <span class="history-customer-stat-val">${c.invoiceCount}</span>
-            <span class="history-customer-stat-label">Invoices</span>
-          </div>
-          <div class="history-customer-stat-col">
-            <span class="history-customer-stat-val ${duesColorClass}">${formatINR(c.dues)}</span>
-            <span class="history-customer-stat-label">Dues</span>
-          </div>
+        <div class="chat-details-block">
+          <span class="chat-customer-name">${escapeHtml(c.name)}</span>
+          <span class="chat-customer-phone">${escapeHtml(c.phone || 'No phone recorded')}</span>
+          <span class="chat-last-activity">${escapeHtml(lastActStr)}</span>
         </div>
-        <div class="history-customer-chevron">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
+      </div>
+      <div class="chat-right-block">
+        <span class="chat-balance-due ${duesClass}">${formatINR(c.dues)}</span>
+        <div class="chat-quick-actions">
+          ${waAction}
+          <button class="chat-action-btn" onclick="event.stopPropagation(); navigateTo('settings'); switchSettingsTab('customers'); openCustomerProfileByCustomerName('${escapeJsString(c.name)}')" title="View Customer Profile">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </button>
         </div>
       </div>
     `;
     grid.appendChild(card);
   });
+}
+
+function openCustomerProfileByCustomerName(name) {
+  var custs = getCustomers() || [];
+  var found = custs.find(function(c) {
+    return c.name.toLowerCase() === name.toLowerCase();
+  });
+  if (found) {
+    openCustomerProfile(found.id);
+  } else {
+    showToast('Customer profile not found.', 'error');
+  }
 }
 
 function fetchCustomerInvoices(customerName, callback) {
@@ -2053,6 +2087,12 @@ function handleLoggedInState() {
   
   var p = currentUser.businessSettings || loadData(KEYS.BUSINESS) || {};
   saveData(KEYS.BUSINESS, p);
+  
+  var bizName = p.name || 'Bill Blue Shop';
+  var workspaceNameEl = document.getElementById('sidebar-workspace-name');
+  if (workspaceNameEl) workspaceNameEl.textContent = bizName;
+  var workspaceAvatarEl = document.getElementById('sidebar-workspace-avatar');
+  if (workspaceAvatarEl) workspaceAvatarEl.textContent = bizName.substring(0, 2).toUpperCase();
   
   var userInvs = currentUser.invoicesList || loadData(KEYS.INVOICES) || [];
   saveData(KEYS.INVOICES, userInvs);
@@ -4012,6 +4052,18 @@ function switchSettingsTab(tabName) {
       var subTab = i.getAttribute('data-settings-tab');
       i.classList.toggle('active', subTab === tabName);
     } else if (i.getAttribute('data-view') === 'settings') {
+      i.classList.remove('active');
+    }
+  });
+
+  // Refresh Mobile Bottom Navigation Settings Sub-Tabs
+  document.querySelectorAll('.mobile-nav-item').forEach(function(i) {
+    if (i.getAttribute('data-view') === 'settings') {
+      var itemTab = i.getAttribute('data-settings-tab');
+      if (itemTab) {
+        i.classList.toggle('active', itemTab === tabName);
+      }
+    } else if (i.classList.contains('active')) {
       i.classList.remove('active');
     }
   });
