@@ -1010,8 +1010,8 @@ function renderCustomerInvoicesTable(customerInvs) {
     var bt = inv.status === 'paid' ? 'Paid' : 'Pending';
     
     var statusBtn = inv.status === 'paid' 
-      ? `<button class="btn-link" style="color:var(--amber); margin-right:12px; font-weight:600;" onclick="toggleStatus('${inv.id}'); refreshActiveCustomerHistory();">Mark Pending</button>`
-      : `<button class="btn-link" style="color:var(--green); margin-right:12px; font-weight:600;" onclick="toggleStatus('${inv.id}'); refreshActiveCustomerHistory();">Mark Paid</button>`;
+      ? `<button class="btn-table-action btn-table-action-warning" onclick="toggleStatus('${inv.id}'); refreshActiveCustomerHistory();">Mark Pending</button>`
+      : `<button class="btn-table-action btn-table-action-success" onclick="toggleStatus('${inv.id}'); refreshActiveCustomerHistory();">Mark Paid</button>`;
     
     tr.innerHTML = `
       <td data-label="Invoice No.">${escapeHtml(inv.number)}</td>
@@ -1019,11 +1019,13 @@ function renderCustomerInvoicesTable(customerInvs) {
       <td data-label="Amount" class="td-amount">${formatINR(inv.grandTotal || inv.total || 0)}</td>
       <td data-label="Payment Status"><span class="badge ${bc}" style="cursor:pointer" onclick="toggleStatus('${inv.id}'); refreshActiveCustomerHistory();">${bt}</span></td>
       <td data-label="Actions" class="td-actions">
-        ${statusBtn}
-        <button class="btn-link" onclick="loadInvoiceForEdit('${inv.id}')">Edit</button>
-        <button class="btn-danger-ghost" onclick="deleteInvoice('${inv.id}'); refreshActiveCustomerHistory();" title="Delete">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <div style="display:inline-flex; align-items:center; gap:8px; justify-content:center; width:100%;">
+          ${statusBtn}
+          <button class="btn-link" onclick="loadInvoiceForEdit('${inv.id}')" style="margin: 0 4px;">Edit</button>
+          <button class="btn-table-action btn-table-action-danger" onclick="deleteInvoice('${inv.id}'); refreshActiveCustomerHistory();" title="Delete">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Delete
+          </button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);

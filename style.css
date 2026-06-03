@@ -1751,6 +1751,207 @@ body.logged-in .desktop-header {
   text-underline-offset: 3px;
 }
 
+/* A4 Invoice Bottom Section Layout Refinements */
+.inv-words {
+  padding: 10px 28px;
+  font-size: 0.78rem;
+  color: var(--text-sec);
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-warm);
+}
+
+.inv-payment {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  gap: 20px;
+}
+
+.inv-bank {
+  flex: 1;
+}
+
+.inv-bank-table {
+  border-collapse: collapse;
+  width: auto;
+  max-width: 320px;
+  font-size: 0.76rem;
+}
+
+.inv-bank-table td {
+  padding: 3px 0;
+  vertical-align: top;
+}
+
+.inv-bank-table td:first-child {
+  color: var(--text-sec);
+  font-weight: 500;
+  padding-right: 12px;
+  white-space: nowrap;
+}
+
+.inv-bank-table td:last-child {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.inv-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+#qr-code {
+  background: #fff;
+  padding: 6px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 6px;
+  display: inline-block;
+}
+
+#qr-code img {
+  display: block;
+}
+
+.inv-qr-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--text-sec);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.inv-footer-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 20px 28px 24px;
+  gap: 24px;
+}
+
+.inv-terms {
+  flex: 1;
+  max-width: 60%;
+  text-align: left;
+}
+
+.inv-terms .inv-section-label {
+  margin-bottom: 4px;
+}
+
+#inv-terms-text {
+  font-size: 0.7rem;
+  color: var(--text-sec);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.inv-signature {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  flex-shrink: 0;
+  margin-left: auto;
+  border-top: 1px dashed var(--border);
+  padding-top: 8px;
+  min-width: 160px;
+}
+
+.inv-sig-img-wrap {
+  height: 45px;
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 4px;
+}
+
+.inv-sig-img-wrap img {
+  max-height: 45px;
+  max-width: 140px;
+  object-fit: contain;
+}
+
+.inv-sig-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-sec);
+  margin: 0;
+}
+
+/* Premium Table Action Buttons (Mark Paid, Mark Pending, Delete) */
+.btn-table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-family: inherit;
+  transition: var(--transition);
+  border: 1px solid transparent;
+  height: 26px;
+  box-sizing: border-box;
+}
+
+.btn-table-action-success {
+  background: var(--success-bg);
+  color: var(--success);
+  border-color: rgba(16, 185, 129, 0.15);
+}
+
+.btn-table-action-success:hover {
+  background: var(--success);
+  color: var(--white);
+  border-color: var(--success);
+}
+
+.btn-table-action-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border-color: rgba(245, 158, 11, 0.15);
+}
+
+.btn-table-action-warning:hover {
+  background: var(--warning);
+  color: var(--white);
+  border-color: var(--warning);
+}
+
+.btn-table-action-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: rgba(239, 68, 68, 0.15);
+}
+
+.btn-table-action-danger:hover {
+  background: var(--danger);
+  color: var(--white);
+  border-color: var(--danger);
+}
+
+.btn-table-action-primary {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: rgba(37, 99, 235, 0.15);
+}
+
+.btn-table-action-primary:hover {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+}
+
 /* ═══════════════════════════════════════════
    INSTAGRAM-STYLE SETTINGS ACTIVITY HUB
    ═══════════════════════════════════════════ */
