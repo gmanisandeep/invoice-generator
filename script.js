@@ -106,9 +106,40 @@ function navigateTo(view) {
   document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active-view'); });
   var target = document.getElementById('view-' + view);
   if (target) { void target.offsetWidth; target.classList.add('active-view'); }
-  document.querySelectorAll('.nav-item').forEach(function(i) { i.classList.toggle('active', i.getAttribute('data-view') === view); });
+  document.querySelectorAll('.nav-item').forEach(function(i) {
+    var isSubTabItem = i.hasAttribute('data-settings-tab');
+    if (view === 'settings') {
+      if (isSubTabItem) {
+        var subTab = i.getAttribute('data-settings-tab');
+        var activePanel = document.querySelector('.hub-panel.active-panel');
+        var activePanelId = activePanel ? activePanel.id.replace('hub-panel-', '') : 'profile';
+        i.classList.toggle('active', subTab === activePanelId);
+      } else {
+        i.classList.remove('active');
+      }
+    } else {
+      if (isSubTabItem) {
+        i.classList.remove('active');
+      } else {
+        i.classList.toggle('active', i.getAttribute('data-view') === view);
+      }
+    }
+  });
   document.querySelectorAll('.mobile-nav-item').forEach(function(i) { i.classList.toggle('active', i.getAttribute('data-view') === view); });
   
+  // Update Breadcrumbs in desktop top header
+  var breadcrumbsTitle = document.getElementById('desktop-breadcrumbs-title');
+  if (breadcrumbsTitle) {
+    var titleMap = {
+      'dashboard': 'Dashboard Overview',
+      'invoice': 'Tax Invoice Composer',
+      'history': 'Customer Accounts Directory',
+      'settings': 'Settings & Business Hub',
+      'referral': 'Refer a Friend'
+    };
+    breadcrumbsTitle.textContent = titleMap[view] || 'SaaS Workspace';
+  }
+
   if (view === 'dashboard') {
     var isPro = currentUser && currentUser.planType === 'pro';
     var wrap = document.getElementById('dashboard-wrapper');
@@ -135,6 +166,10 @@ function navigateTo(view) {
   if (view === 'settings') {
     loadSettingsForm();
     updatePWAInstallUI();
+    switchSettingsTab('profile');
+  }
+  if (view === 'referral') {
+    initReferralSystem();
   }
   if (view === 'admin') renderAdminPortal();
   window.scrollTo(0, 0);
@@ -164,6 +199,30 @@ function init() {
   }
 
   initializeFirebase();
+
+  // Check for mobile QR scanner installation action parameters (?action=download)
+  var params = new URLSearchParams(window.location.search);
+  if ((params.has('action') && (params.get('action') === 'download' || params.get('action') === 'install')) || params.has('ref')) {
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (isMobileDevice() && !isStandalone) {
+      setTimeout(function() {
+        openMobileDirectInstall();
+      }, 1000); // Trigger beautifully right after splash screen fades
+    }
+  }
+
+  // Collapsible Sidebar preferences check
+  var isCollapsed = localStorage.getItem('billblue_sidebar_collapsed') === 'true';
+  if (isCollapsed) {
+    document.body.classList.add('sidebar-collapsed');
+  }
+}
+
+function toggleSidebar() {
+  var body = document.body;
+  body.classList.toggle('sidebar-collapsed');
+  var isCollapsed = body.classList.contains('sidebar-collapsed');
+  localStorage.setItem('billblue_sidebar_collapsed', isCollapsed);
 }
 document.addEventListener('DOMContentLoaded', init);
 
@@ -358,6 +417,15 @@ function updateQRCode(amount) {
 // ═══════════════════════════════════════════
 //  BUSINESS PROFILE
 // ═══════════════════════════════════════════
+function safeToggleUploadZoneClass(imgEl, className, isAdd) {
+  if (!imgEl) return;
+  var zone = imgEl.closest('.upload-zone');
+  if (zone) {
+    if (isAdd) zone.classList.add(className);
+    else zone.classList.remove(className);
+  }
+}
+
 function loadSettingsForm() {
   var p = loadData(KEYS.BUSINESS); if (!p) return;
   setVal('settings-name',p.name);setVal('settings-gst',p.gst);setVal('settings-phone',p.phone);
@@ -380,8 +448,8 @@ function loadSettingsForm() {
   var themeEl=document.getElementById('settings-theme');
   if(themeEl && p.theme){themeEl.value=p.theme;}
   
-  if(p.logo){var li=document.getElementById('settings-logo-img');li.src=p.logo;li.style.display='block';document.getElementById('logo-placeholder').style.display='none';li.closest('.upload-zone').classList.add('has-image');}
-  if(p.signature){var si=document.getElementById('settings-sig-img');si.src=p.signature;si.style.display='block';document.getElementById('sig-placeholder').style.display='none';si.closest('.upload-zone').classList.add('has-image');}
+  if(p.logo){var li=document.getElementById('settings-logo-img');li.src=p.logo;li.style.display='block';document.getElementById('logo-placeholder').style.display='none';safeToggleUploadZoneClass(li, 'has-image', true);}
+  if(p.signature){var si=document.getElementById('settings-sig-img');si.src=p.signature;si.style.display='block';document.getElementById('sig-placeholder').style.display='none';safeToggleUploadZoneClass(si, 'has-image', true);}
   
   // Handle Pro remove branding checkbox
   var brandingGroup = document.getElementById('settings-branding-group');
@@ -439,7 +507,7 @@ function handleImgUpload(e,imgId,phId,key){
   var r=new FileReader();r.onload=function(ev){
     var b=ev.target.result,p=loadData(KEYS.BUSINESS)||{};p[key]=b;saveData(KEYS.BUSINESS,p);
     var img=document.getElementById(imgId);img.src=b;img.style.display='block';
-    document.getElementById(phId).style.display='none';img.closest('.upload-zone').classList.add('has-image');
+    document.getElementById(phId).style.display='none';safeToggleUploadZoneClass(img, 'has-image', true);
     showToast('Uploaded!','success');
   };r.readAsDataURL(f);
 }
@@ -592,23 +660,455 @@ function getInvoiceById(id){return(loadData(KEYS.INVOICES)||[]).find(function(i)
 // ═══════════════════════════════════════════
 //  HISTORY
 // ═══════════════════════════════════════════
-function renderHistory(){
-  var all=loadData(KEYS.INVOICES)||[];
-  var tb=document.getElementById('history-body');var em=document.getElementById('history-empty');var tbl=document.getElementById('history-table');
-  if(!all.length){tbl.style.display='none';em.style.display='flex';return;}
-  tbl.style.display='';em.style.display='none';
-  var sorted=all.slice().sort(function(a,b){return(b.createdAt||0)-(a.createdAt||0);});
-  tb.innerHTML='';
-  sorted.forEach(function(inv){
-    var tr=document.createElement('tr');
-    var bc=inv.status==='paid'?'badge-paid':'badge-pending';var bt=inv.status==='paid'?'Paid':'Pending';
-    var statusBtn = inv.status==='paid' 
-      ? '<button class="btn-link" style="color:var(--amber); margin-right:12px; font-weight:600;" onclick="toggleStatus(\''+inv.id+'\')">Mark as Pending</button>'
-      : '<button class="btn-link" style="color:var(--green); margin-right:12px; font-weight:600;" onclick="toggleStatus(\''+inv.id+'\')">Mark as Paid</button>';
-      
-    tr.innerHTML='<td>'+escapeHtml(inv.number)+'</td><td>'+escapeHtml(inv.customerName||'—')+'</td><td>'+escapeHtml(inv.date||'—')+'</td><td class="td-amount">'+formatINR(inv.grandTotal||inv.total||0)+'</td><td><span class="badge '+bc+'" style="cursor:pointer" onclick="toggleStatus(\''+inv.id+'\')">'+bt+'</span></td><td class="td-actions">'+statusBtn+'<button class="btn-link" onclick="loadInvoiceForEdit(\''+inv.id+'\')">Edit</button><button class="btn-danger-ghost" onclick="deleteInvoice(\''+inv.id+'\')" title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
-    tb.appendChild(tr);
+var historyStatusFilter = 'all'; // 'all', 'paid', 'pending'
+var historyDateFilter = 'all'; // 'all', 'today', 'week', 'month', 'year'
+
+function setHistoryStatusFilter(status, btn) {
+  historyStatusFilter = status;
+  if (btn) {
+    document.querySelectorAll('[data-hist-filter]').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+  }
+  renderHistory();
+}
+
+function setHistoryDateFilter(dateRange, btn) {
+  historyDateFilter = dateRange;
+  if (btn) {
+    document.querySelectorAll('[data-hist-date]').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+  }
+  renderHistory();
+}
+
+function escapeJsString(str) {
+  return str.replace(/'/g, "\'").replace(/"/g, '\"');
+}
+
+function renderHistory() {
+  var invoices = loadData(KEYS.INVOICES) || [];
+  var customers = getCustomers() || [];
+  
+  var customerMap = {};
+  
+  // Pre-populate with catalog customers so cards are always shown
+  customers.forEach(function(c) {
+    var key = c.name.trim().toLowerCase();
+    if (key) {
+      customerMap[key] = {
+        name: c.name.trim(),
+        phone: c.phone || '',
+        address: c.address || '',
+        dues: c.balance || 0,
+        invoiceCount: 0,
+        lastDate: '',
+        lastTimestamp: 0,
+        invoices: []
+      };
+    }
   });
+  
+  // Aggregate from local invoices
+  invoices.forEach(function(inv) {
+    if (!inv.customerName) return;
+    var key = inv.customerName.trim().toLowerCase();
+    if (!customerMap[key]) {
+      customerMap[key] = {
+        name: inv.customerName.trim(),
+        phone: inv.customerPhone || '',
+        address: inv.customerAddr || '',
+        dues: 0,
+        invoiceCount: 0,
+        lastDate: '',
+        lastTimestamp: 0,
+        invoices: []
+      };
+    }
+    
+    var cData = customerMap[key];
+    cData.invoices.push(inv);
+    cData.invoiceCount++;
+    
+    if (inv.status === 'pending') {
+      cData.dues += (inv.grandTotal || inv.total || 0);
+    }
+    
+    var t = inv.createdAt || 0;
+    if (t > cData.lastTimestamp) {
+      cData.lastTimestamp = t;
+      cData.lastDate = inv.date || '';
+    }
+  });
+  
+  var customerList = [];
+  for (var key in customerMap) {
+    customerList.push(customerMap[key]);
+  }
+  
+  // Search
+  var searchQuery = document.getElementById('history-search') ? document.getElementById('history-search').value.trim().toLowerCase() : '';
+  if (searchQuery) {
+    customerList = customerList.filter(function(c) {
+      var matchName = c.name.toLowerCase().indexOf(searchQuery) !== -1;
+      var matchPhone = c.phone.toLowerCase().indexOf(searchQuery) !== -1;
+      var matchInvNo = c.invoices.some(function(inv) {
+        return inv.number && inv.number.toLowerCase().indexOf(searchQuery) !== -1;
+      });
+      return matchName || matchPhone || matchInvNo;
+    });
+  }
+  
+  // Filters
+  var today = getTodayStr();
+  var dObj = new Date();
+  
+  customerList.forEach(function(c) {
+    var filteredInvoices = c.invoices.filter(function(inv) {
+      if (historyStatusFilter !== 'all') {
+        if (inv.status !== historyStatusFilter) return false;
+      }
+      if (historyDateFilter !== 'all') {
+        if (!inv.date) return false;
+        if (historyDateFilter === 'today') return inv.date === today;
+        if (historyDateFilter === 'week') {
+          var day = dObj.getDay() || 7;
+          var start = new Date(dObj); start.setDate(dObj.getDate() - day + 1);
+          return inv.date >= dateStr(start) && inv.date <= today;
+        }
+        if (historyDateFilter === 'month') return inv.date.substring(0, 7) === today.substring(0, 7);
+        if (historyDateFilter === 'year') return inv.date.substring(0, 4) === today.substring(0, 4);
+      }
+      return true;
+    });
+    
+    c.filteredInvoices = filteredInvoices;
+    c.invoiceCount = filteredInvoices.length;
+    
+    var fDues = 0;
+    var lastT = 0;
+    var lastD = '';
+    filteredInvoices.forEach(function(inv) {
+      if (inv.status === 'pending') {
+        fDues += (inv.grandTotal || inv.total || 0);
+      }
+      var t = inv.createdAt || 0;
+      if (t > lastT) {
+        lastT = t;
+        lastD = inv.date || '';
+      }
+    });
+    c.dues = fDues;
+    c.lastTimestamp = lastT;
+    c.lastDate = lastD;
+  });
+  
+  if (historyStatusFilter !== 'all' || historyDateFilter !== 'all' || searchQuery) {
+    customerList = customerList.filter(function(c) {
+      if (searchQuery && c.name.toLowerCase().indexOf(searchQuery) !== -1) return true;
+      return c.invoiceCount > 0;
+    });
+  }
+  
+  // Sort
+  var sortVal = document.getElementById('history-sort') ? document.getElementById('history-sort').value : 'activity';
+  customerList.sort(function(a, b) {
+    if (sortVal === 'activity') return (b.lastTimestamp || 0) - (a.lastTimestamp || 0);
+    if (sortVal === 'name') return a.name.localeCompare(b.name);
+    if (sortVal === 'dues') return (b.dues || 0) - (a.dues || 0);
+    if (sortVal === 'invoices') return (b.invoiceCount || 0) - (a.invoiceCount || 0);
+    return 0;
+  });
+  
+  var grid = document.getElementById('history-customer-cards-grid');
+  var em = document.getElementById('history-empty');
+  
+  if (!grid) return;
+  grid.innerHTML = '';
+  
+  if (!customerList.length) {
+    grid.style.display = 'none';
+    em.style.display = 'flex';
+    return;
+  }
+  
+  grid.style.display = 'grid';
+  em.style.display = 'none';
+  
+  customerList.forEach(function(c) {
+    var card = document.createElement('div');
+    card.className = 'history-customer-card';
+    card.setAttribute('onclick', "openCustomerHistory('" + escapeJsString(c.name) + "')");
+    
+    var nameParts = c.name.trim().split(/\s+/);
+    var initials = '';
+    if (nameParts.length > 0 && nameParts[0]) {
+      initials += nameParts[0].charAt(0).toUpperCase();
+      if (nameParts.length > 1 && nameParts[nameParts.length - 1]) {
+        initials += nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+      }
+    }
+    if (!initials) initials = '👤';
+    
+    var phoneOrActivity = c.phone ? 'Phone: ' + c.phone : (c.lastDate ? 'Active: ' + c.lastDate : 'No activity');
+    var duesColorClass = c.dues > 0 ? 'dues-red' : '';
+    
+    card.innerHTML = `
+      <div class="history-customer-card-header">
+        <div class="history-customer-info-block">
+          <div class="history-customer-avatar">${escapeHtml(initials)}</div>
+          <div class="history-customer-text">
+            <span class="history-customer-name">${escapeHtml(c.name)}</span>
+            <span class="history-customer-phone">${escapeHtml(phoneOrActivity)}</span>
+          </div>
+        </div>
+        <div class="history-customer-stats">
+          <div class="history-customer-stat-col">
+            <span class="history-customer-stat-val">${c.invoiceCount}</span>
+            <span class="history-customer-stat-label">Invoices</span>
+          </div>
+          <div class="history-customer-stat-col">
+            <span class="history-customer-stat-val ${duesColorClass}">${formatINR(c.dues)}</span>
+            <span class="history-customer-stat-label">Dues</span>
+          </div>
+        </div>
+        <div class="history-customer-chevron">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function fetchCustomerInvoices(customerName, callback) {
+  if (firebaseDb && firebaseAuth && firebaseAuth.currentUser) {
+    var tbody = document.getElementById('history-invoices-tbody');
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-sec);"><div class="loader" style="display:inline-block; margin-right:8px;"></div>Loading customer invoices from Firestore...</td></tr>';
+    }
+    
+    firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid)
+      .collection('invoices')
+      .where('customerName', '==', customerName)
+      .get()
+      .then(function(snap) {
+        var localInvoices = loadData(KEYS.INVOICES) || [];
+        var fetchedInvs = [];
+        snap.forEach(function(d) {
+          var inv = d.data();
+          fetchedInvs.push(inv);
+          
+          var idx = localInvoices.findIndex(function(li) { return li.id === inv.id; });
+          if (idx !== -1) {
+            localInvoices[idx] = inv;
+          } else {
+            localInvoices.push(inv);
+          }
+        });
+        saveData(KEYS.INVOICES, localInvoices);
+        callback(fetchedInvs);
+      })
+      .catch(function(err) {
+        console.error("Firestore on-demand fetch failed:", err);
+        showToast('Offline mode: Loaded local records.', 'info');
+        var localInvs = (loadData(KEYS.INVOICES) || []).filter(function(inv) {
+          return inv.customerName && inv.customerName.toLowerCase() === customerName.toLowerCase();
+        });
+        callback(localInvs);
+      });
+  } else {
+    var localInvs = (loadData(KEYS.INVOICES) || []).filter(function(inv) {
+      return inv.customerName && inv.customerName.toLowerCase() === customerName.toLowerCase();
+    });
+    callback(localInvs);
+  }
+}
+
+var activeHistoryCustomerName = '';
+var activeHistoryCustomerInvoices = [];
+var customerInvoiceStatusFilter = 'all';
+
+function setCustomerInvoiceStatusFilter(status, btn) {
+  customerInvoiceStatusFilter = status;
+  document.querySelectorAll('[id^="btn-cust-inv-filter-"]').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  if (btn) btn.classList.add('active');
+  filterCustomerInvoices();
+}
+
+function filterCustomerInvoices() {
+  var searchQuery = document.getElementById('cust-invoice-search') ? document.getElementById('cust-invoice-search').value.trim().toLowerCase() : '';
+  
+  var filtered = activeHistoryCustomerInvoices.filter(function(inv) {
+    // Status filter
+    if (customerInvoiceStatusFilter !== 'all' && inv.status !== customerInvoiceStatusFilter) {
+      return false;
+    }
+    // Search query: match invoice number, payment status, or date
+    if (searchQuery) {
+      var matchNum = inv.number && inv.number.toLowerCase().indexOf(searchQuery) !== -1;
+      var matchDate = inv.date && inv.date.toLowerCase().indexOf(searchQuery) !== -1;
+      var matchStatus = inv.status && inv.status.toLowerCase().indexOf(searchQuery) !== -1;
+      return matchNum || matchDate || matchStatus;
+    }
+    return true;
+  });
+  
+  renderCustomerInvoicesTable(filtered);
+}
+
+function renderCustomerInvoicesTable(customerInvs) {
+  var tbody = document.getElementById('history-invoices-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  
+  if (!customerInvs.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">No matching invoices found</td></tr>';
+    return;
+  }
+  
+  customerInvs.forEach(function(inv) {
+    var tr = document.createElement('tr');
+    var bc = inv.status === 'paid' ? 'badge-paid' : 'badge-pending';
+    var bt = inv.status === 'paid' ? 'Paid' : 'Pending';
+    
+    var statusBtn = inv.status === 'paid' 
+      ? `<button class="btn-link" style="color:var(--amber); margin-right:12px; font-weight:600;" onclick="toggleStatus('${inv.id}'); refreshActiveCustomerHistory();">Mark Pending</button>`
+      : `<button class="btn-link" style="color:var(--green); margin-right:12px; font-weight:600;" onclick="toggleStatus('${inv.id}'); refreshActiveCustomerHistory();">Mark Paid</button>`;
+    
+    tr.innerHTML = `
+      <td data-label="Invoice No.">${escapeHtml(inv.number)}</td>
+      <td data-label="Date">${escapeHtml(inv.date || '—')}</td>
+      <td data-label="Amount" class="td-amount">${formatINR(inv.grandTotal || inv.total || 0)}</td>
+      <td data-label="Payment Status"><span class="badge ${bc}" style="cursor:pointer" onclick="toggleStatus('${inv.id}'); refreshActiveCustomerHistory();">${bt}</span></td>
+      <td data-label="Actions" class="td-actions">
+        ${statusBtn}
+        <button class="btn-link" onclick="loadInvoiceForEdit('${inv.id}')">Edit</button>
+        <button class="btn-danger-ghost" onclick="deleteInvoice('${inv.id}'); refreshActiveCustomerHistory();" title="Delete">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateCustomerHistorySummary(customerInvs) {
+  var totalRevenue = 0;
+  var pendingDues = 0;
+  var lastDate = '—';
+  var lastTimestamp = 0;
+  
+  customerInvs.forEach(function(inv) {
+    var t = inv.grandTotal || inv.total || 0;
+    totalRevenue += t;
+    if (inv.status === 'pending') {
+      pendingDues += t;
+    }
+    var time = inv.createdAt || 0;
+    if (time > lastTimestamp) {
+      lastTimestamp = time;
+      lastDate = inv.date || '—';
+    }
+  });
+  
+  document.getElementById('history-summary-total-revenue').textContent = formatINR(totalRevenue);
+  document.getElementById('history-summary-invoice-count').textContent = customerInvs.length;
+  
+  var duesEl = document.getElementById('history-summary-pending-dues');
+  if (duesEl) {
+    duesEl.textContent = formatINR(pendingDues);
+    duesEl.style.color = pendingDues > 0 ? '#ef4444' : 'var(--text)';
+  }
+  
+  var lastDateEl = document.getElementById('history-summary-last-date');
+  if (lastDateEl) lastDateEl.textContent = lastDate;
+}
+
+function refreshActiveCustomerHistory() {
+  if (activeHistoryCustomerName) {
+    var searchVal = document.getElementById('cust-invoice-search') ? document.getElementById('cust-invoice-search').value : '';
+    
+    fetchCustomerInvoices(activeHistoryCustomerName, function(customerInvs) {
+      activeHistoryCustomerInvoices = customerInvs;
+      activeHistoryCustomerInvoices.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+      
+      updateCustomerHistorySummary(customerInvs);
+      filterCustomerInvoices();
+      
+      if (document.getElementById('cust-invoice-search')) {
+        document.getElementById('cust-invoice-search').value = searchVal;
+      }
+    });
+  }
+}
+
+function openCustomerHistory(customerName) {
+  activeHistoryCustomerName = customerName;
+  customerInvoiceStatusFilter = 'all';
+  
+  document.getElementById('history-customers-view').style.display = 'none';
+  document.getElementById('history-invoices-view').style.display = 'block';
+  
+  document.getElementById('history-summary-cust-name').textContent = customerName;
+  
+  // Reset active filter buttons and search input
+  document.querySelectorAll('[id^="btn-cust-inv-filter-"]').forEach(function(b) {
+    b.classList.toggle('active', b.id === 'btn-cust-inv-filter-all');
+  });
+  var searchInput = document.getElementById('cust-invoice-search');
+  if (searchInput) searchInput.value = '';
+  
+  var customers = getCustomers() || [];
+  var custObj = customers.find(function(c) {
+    return c.name.toLowerCase() === customerName.toLowerCase();
+  });
+  
+  var phoneStr = custObj && custObj.phone ? '📱 Phone: ' + custObj.phone : '📱 Phone: —';
+  var addrStr = custObj && custObj.address ? '📍 Address: ' + custObj.address : '📍 Address: —';
+  document.getElementById('history-summary-cust-meta').innerHTML = `<span>${escapeHtml(phoneStr)}</span> | <span>${escapeHtml(addrStr)}</span>`;
+  
+  var btnCreate = document.getElementById('btn-hist-create-invoice');
+  if (btnCreate) {
+    btnCreate.onclick = function() {
+      resetInvoiceForm();
+      document.getElementById('customer-name').value = customerName;
+      if (custObj) {
+        document.getElementById('customer-phone').value = custObj.phone || '';
+        document.getElementById('customer-address').value = custObj.address || '';
+      }
+      navigateTo('invoice');
+    };
+  }
+  
+  var btnProfile = document.getElementById('btn-hist-view-profile');
+  if (btnProfile) {
+    if (custObj) {
+      btnProfile.style.display = 'inline-flex';
+      btnProfile.onclick = function() {
+        navigateToCustomersAndOpenProfile(custObj.id);
+      };
+    } else {
+      btnProfile.style.display = 'none';
+    }
+  }
+  
+  fetchCustomerInvoices(customerName, function(customerInvs) {
+    activeHistoryCustomerInvoices = customerInvs;
+    activeHistoryCustomerInvoices.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+    
+    updateCustomerHistorySummary(customerInvs);
+    filterCustomerInvoices();
+  });
+}
+
+function closeCustomerHistory() {
+  document.getElementById('history-invoices-view').style.display = 'none';
+  document.getElementById('history-customers-view').style.display = 'block';
+  renderHistory();
 }
 
 // ═══════════════════════════════════════════
@@ -678,7 +1178,7 @@ function renderDashboard() {
   recent.forEach(function(inv) {
     var tr = document.createElement('tr');
     var bc = inv.status === 'paid' ? 'badge-paid' : 'badge-pending';
-    tr.innerHTML = '<td>' + escapeHtml(inv.number) + '</td><td>' + escapeHtml(inv.customerName || '—') + '</td><td>' + escapeHtml(inv.date || '—') + '</td><td class="td-amount">' + formatINR(inv.grandTotal || inv.total || 0) + '</td><td><span class="badge ' + bc + '">' + (inv.status === 'paid' ? 'Paid' : 'Pending') + '</span></td>';
+    tr.innerHTML = '<td data-label="Invoice #">' + escapeHtml(inv.number) + '</td><td data-label="Customer">' + escapeHtml(inv.customerName || '—') + '</td><td data-label="Date">' + escapeHtml(inv.date || '—') + '</td><td data-label="Amount" class="td-amount">' + formatINR(inv.grandTotal || inv.total || 0) + '</td><td data-label="Status"><span class="badge ' + bc + '">' + (inv.status === 'paid' ? 'Paid' : 'Pending') + '</span></td>';
     dtb.appendChild(tr);
   });
 
@@ -871,18 +1371,42 @@ function fallbackWA() {
 // ═══════════════════════════════════════════
 function showToast(msg, type) {
   var c = document.getElementById('toast-container');
+  if (!c) {
+    c = document.createElement('div');
+    c.id = 'toast-container';
+    document.body.appendChild(c);
+  }
   var t = document.createElement('div');
   t.className = 'toast' + (type ? ' toast-' + type : '');
-  t.textContent = msg; c.appendChild(t);
-  setTimeout(function() { t.classList.add('toast-out'); setTimeout(function() { t.remove(); }, 250); }, 2200);
+  
+  // Icon based on type
+  var icon = '💡';
+  if (type === 'success') icon = '✅';
+  else if (type === 'error') icon = '❌';
+  else if (type === 'warning') icon = '⚠️';
+  else if (type === 'info') icon = 'ℹ️';
+  
+  t.innerHTML = `<span style="flex-shrink:0;">${icon}</span><span style="flex:1;">${escapeHtml(msg)}</span>`;
+  c.appendChild(t);
+  
+  setTimeout(function() {
+    t.classList.add('toast-out');
+    setTimeout(function() { t.remove(); }, 250);
+  }, 2500);
 }
 
 // ═══════════════════════════════════════════
 //  UTILITIES
 // ═══════════════════════════════════════════
 function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 6); }
-function getVal(id) { return (document.getElementById(id).value || '').trim(); }
-function setVal(id, v) { document.getElementById(id).value = v || ''; }
+function getVal(id) {
+  var el = document.getElementById(id);
+  return el ? (el.value || '').trim() : '';
+}
+function setVal(id, v) {
+  var el = document.getElementById(id);
+  if (el) el.value = v || '';
+}
 function escapeHtml(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function escapeAttr(s) { if (!s) return ''; return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function highlightField(el) { el.focus(); el.style.borderColor = '#ef4444'; el.style.boxShadow = '0 0 0 2px rgba(239,68,68,.15)'; setTimeout(function() { el.style.borderColor = ''; el.style.boxShadow = ''; }, 1200); }
@@ -1375,6 +1899,13 @@ function initializeFirebase() {
       firebaseAuth = firebaseApp.auth();
       firebaseDb = firebaseApp.firestore();
       
+      // OPTIMISTIC STARTUP CACHE LOAD: Bypass startup delay completely if logged in before
+      var savedUser = loadData('billblue_current_user');
+      if (savedUser) {
+        currentUser = savedUser;
+        handleLoggedInState();
+      }
+      
       firebaseAuth.onAuthStateChanged(function(user) {
         if (user) {
           syncUserData(user);
@@ -1405,6 +1936,7 @@ function initializeSandbox() {
 }
 
 function syncUserData(user) {
+  var isOptimistic = !!currentUser;
   firebaseDb.collection('users').doc(user.uid).get().then(function(doc) {
     if (doc.exists) {
       currentUser = doc.data();
@@ -1423,18 +1955,21 @@ function syncUserData(user) {
       firebaseDb.collection('users').doc(user.uid).set(currentUser);
     }
     
-    firebaseDb.collection('users').doc(user.uid).collection('invoices').get().then(function(snap) {
-      var invs = [];
-      snap.forEach(function(d) {
-        invs.push(d.data());
-      });
-      currentUser.invoicesList = invs;
-      handleLoggedInState();
+    // Save to cache for optimistic local startup
+    saveData('billblue_current_user', currentUser);
+    
+    // Optimised load logic: bypass loading all invoices bulk-download on login
+    currentUser.invoicesList = loadData(KEYS.INVOICES) || [];
+    handleLoggedInState();
+    
+    if (!isOptimistic) {
       showToast('Session synced!', 'success');
-    });
+    }
   }).catch(function(e) {
-    showToast('Sync failed, offline mode.', 'error');
-    initializeSandbox();
+    if (!isOptimistic) {
+      showToast('Sync failed, offline mode.', 'error');
+      initializeSandbox();
+    }
   });
 }
 
@@ -1567,6 +2102,12 @@ function handleLoggedInState() {
       openUpgradeModal();
     }, 2500);
   }
+  
+  // Update Settings -> Account & Session details
+  var settingsEmail = document.getElementById('settings-current-user-email');
+  if (settingsEmail) settingsEmail.textContent = currentUser.email || 'Sandbox User';
+  var settingsPlan = document.getElementById('settings-current-user-plan');
+  if (settingsPlan) settingsPlan.textContent = currentUser.planType || 'Free';
   
   if (typeof hideSplashScreen === 'function') hideSplashScreen();
 }
@@ -1761,6 +2302,21 @@ function triggerSignOut() {
   localStorage.removeItem('billblue_current_user');
   handleLoggedOutState();
   showToast('Signed out (Sandbox)', 'success');
+}
+
+function triggerAddAccount() {
+  if (firebaseAuth) {
+    firebaseAuth.signOut().then(function() {
+      showToast('Signed out. Ready to add/switch account.', 'success');
+      showAuthCard('login');
+    });
+    return;
+  }
+  
+  localStorage.removeItem('billblue_current_user');
+  handleLoggedOutState();
+  showToast('Signed out (Sandbox). Ready to add/switch account.', 'success');
+  showAuthCard('login');
 }
 
 // ═══════════════════════════════════════════
@@ -2207,72 +2763,176 @@ function dismissSwipeHint() {
   }
 }
 
-// Render clean installation card actions depending on browser compatibility
+// Render clean installation card actions depending on mobile vs desktop browser
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 function updatePWAInstallUI() {
-  var installCard = document.getElementById('pwa-install-card');
+  updatePWACardInstance('pwa-install-card', 'pwa-install-desc', 'btn-pwa-install');
+  updatePWACardInstance('pwa-install-card-sub', 'pwa-install-desc-sub', 'btn-pwa-install-sub');
+}
+
+function updatePWACardInstance(cardId, descId, btnId) {
+  var installCard = document.getElementById(cardId);
   if (!installCard) return;
   
   var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   
   if (isStandalone) {
-    // If running in PWA window
-    installCard.style.display = 'block';
-    var desc = document.getElementById('pwa-install-desc');
-    if (desc) desc.textContent = 'Bill Blue is running inside standalone app mode. Enjoy the full-screen native experience!';
-    var btn = document.getElementById('btn-pwa-install');
-    if (btn) {
-      btn.textContent = 'Installed';
-      btn.disabled = true;
-      btn.style.opacity = '0.6';
-      btn.style.cursor = 'default';
-      btn.style.background = '#4b5563';
-    }
-  } else if (deferredPrompt) {
-    // If app is installable (e.g. Chrome/Edge/Android)
-    installCard.style.display = 'block';
-    var desc = document.getElementById('pwa-install-desc');
-    if (desc) desc.textContent = 'Install this app on your device for standalone window editing and offline capabilities!';
-    var btn = document.getElementById('btn-pwa-install');
-    if (btn) {
-      btn.textContent = 'Install App';
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.style.cursor = 'pointer';
-      btn.style.display = 'inline-block';
-    }
+    // Hide the install card completely if running in standalone PWA mode (laptop or mobile)
+    installCard.style.display = 'none';
   } else {
-    // Check if running on iOS Safari
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIOS) {
-      installCard.style.display = 'block';
-      var desc = document.getElementById('pwa-install-desc');
-      if (desc) desc.innerHTML = 'To install Bill Blue on iOS, tap the <strong>Share</strong> button <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin: 0 2px;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/></svg> in Safari, then select <strong>Add to Home Screen</strong>.';
-      var btn = document.getElementById('btn-pwa-install');
-      if (btn) btn.style.display = 'none';
+    installCard.style.display = 'block';
+    var desc = document.getElementById(descId);
+    var btn = document.getElementById(btnId);
+    
+    if (isMobileDevice()) {
+      // Mobile Browser (Not Standalone yet)
+      if (desc) desc.textContent = 'Install Bill Blue on your phone for a full-screen, native standalone shop billing experience!';
+      if (btn) {
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS) {
+          btn.textContent = 'Install App (Guide)';
+        } else {
+          btn.textContent = 'Install App';
+        }
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btn.style.display = 'inline-block';
+      }
     } else {
-      // Hide on standard desktop screens if not installable
-      installCard.style.display = 'none';
+      // Desktop Laptop / PC
+      if (desc) desc.textContent = 'Access Bill Blue instantly as a native app on your PC or scan QR to install on Phone!';
+      if (btn) {
+        btn.textContent = 'Get App / QR Code';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btn.style.display = 'inline-block';
+      }
     }
   }
 }
 
-// Open Chrome/Android app installation trigger
-function triggerPWAInstall() {
-  if (!deferredPrompt) {
-    showToast('App is already installed or install is not supported by your browser.', 'info');
-    return;
+function openPWAInstallModal() {
+  var modal = document.getElementById('pwa-install-modal');
+  if (modal) modal.style.display = 'flex';
+  
+  var mobBtn = document.getElementById('btn-modal-mobile-install');
+  if (mobBtn) {
+    mobBtn.style.display = isMobileDevice() ? 'inline-flex' : 'none';
   }
-  deferredPrompt.prompt();
-  deferredPrompt.userChoice.then(function(choiceResult) {
-    if (choiceResult.outcome === 'accepted') {
-      console.log('[PWA] User accepted the install prompt');
-      showToast('Installing Bill Blue...', 'success');
-    } else {
-      console.log('[PWA] User dismissed the install prompt');
-    }
-    deferredPrompt = null;
-    updatePWAInstallUI();
+  
+  var qrContainer = document.getElementById('pwa-install-qr');
+  if (qrContainer && typeof QRCode !== 'undefined') {
+    qrContainer.innerHTML = '';
+    new QRCode(qrContainer, {
+      text: window.location.origin + '?action=download',
+      width: 110,
+      height: 110,
+      colorDark : "#1e3a8a",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.H
+    });
+  }
+}
+
+function triggerMobileInstallFromModal() {
+  closePWAInstallModal();
+  openMobileDirectInstall();
+}
+
+function closePWAInstallModal() {
+  var modal = document.getElementById('pwa-install-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function triggerPCInstall() {
+  closePWAInstallModal();
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(choiceResult) {
+      if (choiceResult.outcome === 'accepted') {
+        showToast('Installing Bill Blue on PC...', 'success');
+      }
+      deferredPrompt = null;
+      updatePWAInstallUI();
+    });
+  } else {
+    showToast('Browser installation prompt is not ready. Click the install icon in your browser address bar!', 'info');
+  }
+}
+
+function copyProductionUrl() {
+  var url = window.location.origin + '?action=download';
+  navigator.clipboard.writeText(url).then(function() {
+    showToast('Direct mobile download link copied!', 'success');
+  }).catch(function() {
+    showToast('Failed to copy link.', 'error');
   });
+}
+
+function triggerPWAInstall() {
+  if (isMobileDevice()) {
+    openMobileDirectInstall();
+  } else {
+    openPWAInstallModal();
+  }
+}
+
+// ── Mobile Direct Installation Sheet Controls ──
+function openMobileDirectInstall() {
+  var modal = document.getElementById('mobile-direct-install-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  var iosInstructions = document.getElementById('ios-safari-direct-instructions');
+  var androidBtn = document.getElementById('btn-mobile-direct-download');
+  
+  if (isIOS) {
+    if (iosInstructions) iosInstructions.style.display = 'block';
+    if (androidBtn) androidBtn.style.display = 'none';
+  } else {
+    if (iosInstructions) iosInstructions.style.display = 'none';
+    if (androidBtn) {
+      androidBtn.style.display = 'inline-flex';
+      if (!deferredPrompt) {
+        androidBtn.textContent = 'Add to Home Screen (Guide)';
+      } else {
+        androidBtn.textContent = 'Install Mobile App';
+      }
+    }
+  }
+}
+
+function triggerDirectMobileInstall() {
+  if (deferredPrompt) {
+    closeMobileDirectInstall();
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(choiceResult) {
+      if (choiceResult.outcome === 'accepted') {
+        showToast('Installing Bill Blue...', 'success');
+      }
+      deferredPrompt = null;
+      updatePWAInstallUI();
+    });
+  } else {
+    closeMobileDirectInstall();
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      showToast('Tap Share in Safari, then Add to Home Screen.', 'info');
+    } else {
+      showToast('Open your browser menu (three dots) and tap Add to Home screen / Install.', 'info');
+    }
+  }
+}
+
+function closeMobileDirectInstall() {
+  var modal = document.getElementById('mobile-direct-install-modal');
+  if (modal) modal.style.display = 'none';
 }
 
 // ═══════════════════════════════════════════
@@ -2319,12 +2979,12 @@ function openOnboardingWizard() {
       obLogoImg.src = p.logo;
       obLogoImg.style.display = 'block';
       obLogoPh.style.display = 'none';
-      obLogoImg.closest('.upload-zone').classList.add('has-image');
+      safeToggleUploadZoneClass(obLogoImg, 'has-image', true);
     } else {
       obLogoImg.src = '';
       obLogoImg.style.display = 'none';
       obLogoPh.style.display = 'block';
-      obLogoImg.closest('.upload-zone').classList.remove('has-image');
+      safeToggleUploadZoneClass(obLogoImg, 'has-image', false);
     }
   }
   
@@ -2335,12 +2995,12 @@ function openOnboardingWizard() {
       obSigImg.src = p.signature;
       obSigImg.style.display = 'block';
       obSigPh.style.display = 'none';
-      obSigImg.closest('.upload-zone').classList.add('has-image');
+      safeToggleUploadZoneClass(obSigImg, 'has-image', true);
     } else {
       obSigImg.src = '';
       obSigImg.style.display = 'none';
       obSigPh.style.display = 'block';
-      obSigImg.closest('.upload-zone').classList.remove('has-image');
+      safeToggleUploadZoneClass(obSigImg, 'has-image', false);
     }
   }
 }
@@ -2429,8 +3089,10 @@ function completeOnboarding() {
   p.accNumber = getVal('ob-pay-acc');
   p.accHolder = getVal('ob-pay-holder');
   
-  var taxOn = document.getElementById('ob-pref-tax-on').checked;
-  var taxRate = parseFloat(document.getElementById('ob-pref-tax-rate').value) || 18;
+  var obTaxOnEl = document.getElementById('ob-pref-tax-on');
+  var taxOn = obTaxOnEl ? obTaxOnEl.checked : false;
+  var obTaxRateEl = document.getElementById('ob-pref-tax-rate');
+  var taxRate = obTaxRateEl ? (parseFloat(obTaxRateEl.value) || 18) : 18;
   var prefix = getVal('ob-pref-prefix') || 'BB-';
   
   p.taxOnDefault = taxOn;
@@ -2643,14 +3305,14 @@ function renderProductsList() {
     var stockWeight = p.stock <= 5 ? '700' : '500';
     
     tr.innerHTML = `
-      <td style="font-weight:600; color:var(--text);">${escapeHtml(p.name)}</td>
-      <td>${escapeHtml(p.category || '—')}</td>
-      <td style="text-align:center; font-family:monospace; font-weight:600;">${escapeHtml(p.hsn || '—')}</td>
-      <td style="text-align:center;">${escapeHtml(p.unit || 'Nos')}</td>
-      <td style="text-align:right; font-weight:700; font-variant-numeric:tabular-nums; color:var(--text);">${formatINR(p.price)}</td>
-      <td style="text-align:center; font-weight:600; color:var(--primary-med);">${p.tax}%</td>
-      <td style="text-align:center; color:${stockColor}; font-weight:${stockWeight}; font-variant-numeric:tabular-nums;">${p.stock}</td>
-      <td style="text-align:center;">
+      <td data-label="Item Name" style="font-weight:600; color:var(--text);">${escapeHtml(p.name)}</td>
+      <td data-label="Category">${escapeHtml(p.category || '—')}</td>
+      <td data-label="HSN/SAC" style="text-align:center; font-family:monospace; font-weight:600;">${escapeHtml(p.hsn || '—')}</td>
+      <td data-label="Unit" style="text-align:center;">${escapeHtml(p.unit || 'Nos')}</td>
+      <td data-label="Price" style="text-align:right; font-weight:700; font-variant-numeric:tabular-nums; color:var(--text);">${formatINR(p.price)}</td>
+      <td data-label="GST Tax" style="text-align:center; font-weight:600; color:var(--primary-med);">${p.tax}%</td>
+      <td data-label="Stock" style="text-align:center; color:${stockColor}; font-weight:${stockWeight}; font-variant-numeric:tabular-nums;">${p.stock}</td>
+      <td data-label="Actions" style="text-align:center;">
         <button class="btn-link" style="margin-right:8px;" onclick="editProductItem('${p.id}')">Edit</button>
         <button class="btn-danger-ghost" onclick="deleteProductItem('${p.id}')" style="display:inline-flex;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -2861,11 +3523,11 @@ function renderCustomersList() {
     var balWeight = c.balance > 0 ? '700' : '500';
     
     tr.innerHTML = `
-      <td style="font-weight:600; color:var(--text);">${escapeHtml(c.name)}</td>
-      <td style="font-variant-numeric:tabular-nums;">${escapeHtml(c.phone)}</td>
-      <td>${escapeHtml(c.address || '—')}</td>
-      <td style="text-align:right; color:${balColor}; font-weight:${balWeight}; font-variant-numeric:tabular-nums;">${formatINR(c.balance)}</td>
-      <td style="text-align:center;">
+      <td data-label="Customer" style="font-weight:600; color:var(--text);">${escapeHtml(c.name)}</td>
+      <td data-label="Phone" style="font-variant-numeric:tabular-nums;">${escapeHtml(c.phone)}</td>
+      <td data-label="Address">${escapeHtml(c.address || '—')}</td>
+      <td data-label="Outstanding Dues" style="text-align:right; color:${balColor}; font-weight:${balWeight}; font-variant-numeric:tabular-nums;">${formatINR(c.balance)}</td>
+      <td data-label="Actions" style="text-align:center;">
         <button class="btn-link" style="margin-right:8px;" onclick="openCustomerProfile('${c.id}')">View Profile</button>
         <button class="btn-danger-ghost" onclick="deleteCustomerItem('${c.id}')" style="display:inline-flex;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -3107,10 +3769,10 @@ function renderKhataBookList() {
   debtors.forEach(function(c) {
     var tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="font-weight:600; color:var(--text);">${escapeHtml(c.name)}</td>
-      <td style="font-variant-numeric:tabular-nums;">${escapeHtml(c.phone)}</td>
-      <td style="text-align:right; color:#ef4444; font-weight:700; font-variant-numeric:tabular-nums;">${formatINR(c.balance)}</td>
-      <td style="text-align:center;">
+      <td data-label="Debtor" style="font-weight:600; color:var(--text);">${escapeHtml(c.name)}</td>
+      <td data-label="Phone" style="font-variant-numeric:tabular-nums;">${escapeHtml(c.phone)}</td>
+      <td data-label="Debt Amount" style="text-align:right; color:#ef4444; font-weight:700; font-variant-numeric:tabular-nums;">${formatINR(c.balance)}</td>
+      <td data-label="Actions" style="text-align:center;">
         <button class="btn-link" style="margin-right:8px;" onclick="navigateToCustomersAndOpenProfile('${c.id}')">View Details</button>
         <button class="btn btn-save" style="background:#2563eb; border-color:#2563eb; height:26px; padding:0 8px; font-size:0.65rem; display:inline-flex;" onclick="sendWhatsAppReminder('${c.name}', ${c.balance}, '${c.phone}')">Remind</button>
       </td>
@@ -3215,14 +3877,12 @@ function applyPaywalls() {
     }
   }
   
-  // 2. Products catalog is now free in the restructured business model
-  toggleSectionPaywall('view-products', true, '', '');
-  
-  // 3. Customers paywall
-  toggleSectionPaywall('view-customers', isPro, 'Unlock Customer Profiles', 'Track purchase histories, order metrics, and auto-populate customer details on invoices with the Pro Plan.');
-  
-  // 4. Khata Book paywall
-  toggleSectionPaywall('view-khata', isPro, 'Unlock Khata Credit Ledger', 'Track active debtor balances, manual payments, credit dues, and send WhatsApp payment notifications with the Pro Plan.');
+  // 2. Settings Hub panels paywalls
+  toggleSectionPaywall('hub-panel-products', true, '', '');
+  toggleSectionPaywall('hub-panel-customers', isPro, 'Unlock Customer Profiles', 'Track purchase histories, order metrics, and auto-populate customer details on invoices with the Pro Plan.');
+  toggleSectionPaywall('hub-panel-khata', isPro, 'Unlock Khata Credit Ledger', 'Track active debtor balances, manual payments, credit dues, and send WhatsApp payment notifications with the Pro Plan.');
+  toggleSectionPaywall('hub-panel-inventory', isPro, 'Unlock Inventory Tracking', 'Track product stock levels, set low-stock warning alerts, and adjust stock quantities manually with the Pro Plan.');
+  toggleSectionPaywall('hub-panel-analytics', isPro, 'Unlock Advanced Business Analytics', 'Visualize monthly sales, order distribution loops, and top-selling product statistics with the Pro Plan.');
 }
 
 function toggleSectionPaywall(sectionId, isPro, title, desc) {
@@ -3309,6 +3969,292 @@ function contactSetupSupport() {
   window.open(url, "_blank");
 }
 
+// ── Settings Hub Split SPA Controls ──
+function switchSettingsTab(tabName) {
+  var tabs = document.querySelectorAll('.hub-tab');
+  tabs.forEach(function(tab) {
+    tab.classList.remove('active');
+  });
+  
+  var clickedTab = Array.prototype.find.call(tabs, function(t) {
+    return t.getAttribute('onclick') === "switchSettingsTab('" + tabName + "')";
+  });
+  if (clickedTab) clickedTab.classList.add('active');
+  
+  var panels = document.querySelectorAll('.hub-panel');
+  panels.forEach(function(panel) {
+    panel.classList.remove('active-panel');
+  });
+  
+  var activePanel = document.getElementById('hub-panel-' + tabName);
+  if (activePanel) {
+    activePanel.classList.add('active-panel');
+    if (tabName === 'analytics') {
+      renderHubAnalyticsCharts();
+    } else if (tabName === 'inventory') {
+      renderInventoryTab();
+    }
+  }
+  
+  var layout = document.getElementById('settings-hub-layout');
+  if (layout) {
+    layout.classList.add('viewport-active');
+  }
+  
+  if (typeof applyPaywalls === 'function') {
+    applyPaywalls();
+  }
+
+  // Refresh Desktop Sidebar sub-tab highlighting
+  document.querySelectorAll('.nav-item').forEach(function(i) {
+    var isSubTabItem = i.hasAttribute('data-settings-tab');
+    if (isSubTabItem) {
+      var subTab = i.getAttribute('data-settings-tab');
+      i.classList.toggle('active', subTab === tabName);
+    } else if (i.getAttribute('data-view') === 'settings') {
+      i.classList.remove('active');
+    }
+  });
+}
+
+function backToHubMenu() {
+  var layout = document.getElementById('settings-hub-layout');
+  if (layout) {
+    layout.classList.remove('viewport-active');
+  }
+}
+
+function navigateToCustomersAndOpenProfile(id) {
+  navigateTo('settings');
+  switchSettingsTab('customers');
+  openCustomerProfile(id);
+}
+
+// ── Settings Hub Advanced Analytics ──
+var hubChartRevenue, hubChartInvoices, hubChartProducts;
+
+function renderHubAnalyticsCharts() {
+  if (typeof Chart === 'undefined') return;
+  
+  var invoices = loadData(KEYS.INVOICES) || [];
+  
+  var months = [];
+  var revByMonth = {};
+  var countByMonth = {};
+  var d = new Date();
+  for (var m = 5; m >= 0; m--) {
+    var md = new Date(d.getFullYear(), d.getMonth() - m, 1);
+    var key = md.getFullYear() + '-' + String(md.getMonth() + 1).padStart(2, '0');
+    var label = md.toLocaleString('en', { month: 'short' }) + ' ' + md.getFullYear().toString().slice(-2);
+    months.push({ key: key, label: label });
+    revByMonth[key] = 0;
+    countByMonth[key] = 0;
+  }
+  
+  invoices.forEach(function(inv) {
+    if (!inv.date) return;
+    var k = inv.date.substring(0, 7);
+    if (revByMonth[k] !== undefined) {
+      revByMonth[k] += inv.grandTotal || inv.total || 0;
+      countByMonth[k]++;
+    }
+  });
+  
+  var labels = months.map(function(m) { return m.label; });
+  var revData = months.map(function(m) { return revByMonth[m.key]; });
+  var cntData = months.map(function(m) { return countByMonth[m.key]; });
+  
+  var chartOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+      x: { ticks: { font: { size: 10 } } }
+    }
+  };
+  
+  var ctx1 = document.getElementById('chart-hub-revenue');
+  if (ctx1) {
+    if (hubChartRevenue) hubChartRevenue.destroy();
+    hubChartRevenue = new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{ data: revData, backgroundColor: 'rgba(37,99,235,.75)', borderRadius: 4, barPercentage: 0.65 }]
+      },
+      options: chartOpts
+    });
+  }
+  
+  var ctx2 = document.getElementById('chart-hub-invoices');
+  if (ctx2) {
+    if (hubChartInvoices) hubChartInvoices.destroy();
+    hubChartInvoices = new Chart(ctx2, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{ data: cntData, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)', fill: true, tension: 0.35, borderWidth: 2.5 }]
+      },
+      options: chartOpts
+    });
+  }
+  
+  // Doughnut contribution pie chart
+  var custRev = {};
+  invoices.forEach(function(inv) {
+    var name = inv.customerName || 'Anonymous';
+    custRev[name] = (custRev[name] || 0) + (inv.grandTotal || inv.total || 0);
+  });
+  
+  var sortedCusts = [];
+  for (var name in custRev) {
+    sortedCusts.push({ name: name, value: custRev[name] });
+  }
+  sortedCusts.sort(function(a, b) { return b.value - a.value; });
+  
+  var topCusts = sortedCusts.slice(0, 5);
+  var otherSum = 0;
+  if (sortedCusts.length > 5) {
+    sortedCusts.slice(5).forEach(function(c) { otherSum += c.value; });
+    topCusts.push({ name: 'Others', value: otherSum });
+  }
+  
+  var ctx3 = document.getElementById('chart-hub-products');
+  if (ctx3) {
+    if (hubChartProducts) hubChartProducts.destroy();
+    
+    var pieLabels = topCusts.map(function(c) { return c.name; });
+    var pieData = topCusts.map(function(c) { return c.value; });
+    var bgColors = ['#1e3a8a', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#cbd5e1'];
+    
+    hubChartProducts = new Chart(ctx3, {
+      type: 'doughnut',
+      data: {
+        labels: pieLabels,
+        datasets: [{ data: pieData, backgroundColor: bgColors.slice(0, pieLabels.length), borderWidth: 1 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'right',
+            labels: { font: { size: 9 }, boxWidth: 10 }
+          }
+        }
+      }
+    });
+  }
+}
+
+// ── Settings Hub Inventory Tracker ──
+function renderInventoryTab() {
+  var prods = getProducts() || [];
+  
+  var totalItems = prods.length;
+  var lowStockCount = 0;
+  var netStockQty = 0;
+  var lowStockNames = [];
+  
+  prods.forEach(function(p) {
+    var qty = p.stock || 0;
+    netStockQty += qty;
+    if (qty <= 5) {
+      lowStockCount++;
+      lowStockNames.push(p.name);
+    }
+  });
+  
+  var totalItemsEl = document.getElementById('inv-stat-total-items');
+  if (totalItemsEl) totalItemsEl.textContent = totalItems;
+  
+  var lowStockEl = document.getElementById('inv-stat-low-stock');
+  if (lowStockEl) lowStockEl.textContent = lowStockCount;
+  
+  var netStockEl = document.getElementById('inv-stat-total-stock-qty');
+  if (netStockEl) netStockEl.textContent = netStockQty;
+  
+  var alertCard = document.getElementById('low-stock-alert-card');
+  var alertText = document.getElementById('low-stock-alert-text');
+  if (alertCard && alertText) {
+    if (lowStockCount > 0) {
+      alertCard.style.display = 'block';
+      alertText.textContent = 'The following items are running out of stock (qty <= 5): ' + lowStockNames.join(', ') + '.';
+    } else {
+      alertCard.style.display = 'none';
+    }
+  }
+  
+  var tbody = document.getElementById('inventory-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  
+  var searchQuery = document.getElementById('inventory-search') ? document.getElementById('inventory-search').value.trim().toLowerCase() : '';
+  
+  var filteredProds = prods;
+  if (searchQuery) {
+    filteredProds = prods.filter(function(p) {
+      return (p.name && p.name.toLowerCase().indexOf(searchQuery) !== -1) ||
+             (p.category && p.category.toLowerCase().indexOf(searchQuery) !== -1);
+    });
+  }
+  
+  if (!filteredProds.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">No stock items found</td></tr>';
+    return;
+  }
+  
+  filteredProds.forEach(function(p) {
+    var tr = document.createElement('tr');
+    var stockQty = p.stock || 0;
+    var stockStyle = stockQty <= 5 ? 'color:#ef4444; font-weight:700;' : 'color:var(--text-sec); font-weight:600;';
+    
+    tr.innerHTML = `
+      <td>\${escapeHtml(p.name)}</td>
+      <td>\${escapeHtml(p.category || '—')}</td>
+      <td style="text-align:center;">\${escapeHtml(p.unit || 'pcs')}</td>
+      <td style="text-align:right; \${stockStyle}">\${stockQty}</td>
+      <td style="text-align:center;">
+        <button class="btn-link" onclick="adjustStockPrompt('\${p.id}')" style="font-weight:700; color:var(--primary);">Adjust Stock</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function adjustStockPrompt(id) {
+  var isPro = currentUser && currentUser.planType === 'pro';
+  if (!isPro) {
+    openUpgradeModal();
+    return;
+  }
+  
+  var prods = getProducts();
+  var prod = prods.find(function(p) { return p.id === id; });
+  if (!prod) return;
+  
+  var input = prompt("Adjust stock level for '" + prod.name + "'. Enter the new absolute quantity:", prod.stock || 0);
+  if (input === null) return;
+  
+  var newQty = parseInt(input);
+  if (isNaN(newQty) || newQty < 0) {
+    showToast('Please enter a valid non-negative number!', 'error');
+    return;
+  }
+  
+  prod.stock = newQty;
+  saveData('billblue_products', prods);
+  syncProductToDb(prod);
+  
+  renderInventoryTab();
+  if (typeof renderProductsList === 'function') renderProductsList();
+  showToast('Stock adjusted successfully!', 'success');
+}
+
+
+
 // Referral Code System Logic
 function initReferralSystem() {
   if (!currentUser) return;
@@ -3319,9 +4265,18 @@ function initReferralSystem() {
     saveUserDataToDbOrSim(currentUser);
   }
   
-  // Update referral code display in UI
-  var codeEl = document.getElementById('settings-referral-code');
-  if (codeEl) codeEl.textContent = currentUser.referralCode;
+  var code = currentUser.referralCode;
+  
+  // Update Settings hub referral elements
+  var settingsCodeEl = document.getElementById('settings-referral-code');
+  if (settingsCodeEl) settingsCodeEl.textContent = code;
+  
+  // Update Dedicated Refer view elements
+  var displayLinkEl = document.getElementById('referral-link-display');
+  if (displayLinkEl) displayLinkEl.textContent = window.location.origin + '?ref=' + code;
+  
+  var displayCodeEl = document.getElementById('referral-code-display');
+  if (displayCodeEl) displayCodeEl.textContent = code;
   
   // Count successfully referred businesses
   var referralsCount = 0;
@@ -3329,26 +4284,43 @@ function initReferralSystem() {
     referralsCount = currentUser.referrals.length;
   }
   
-  var countEl = document.getElementById('settings-referral-count');
+  var countEl = document.getElementById('referral-count-display');
   if (countEl) countEl.textContent = referralsCount;
   
   // Hide "Enter Referral Code" button if they have already claimed one
-  var btnEnter = document.getElementById('btn-enter-referral');
-  if (btnEnter) {
+  var btnPage = document.getElementById('btn-enter-referral-page');
+  if (btnPage) {
     if (currentUser.referredBy) {
-      btnEnter.style.display = 'none';
+      btnPage.style.display = 'none';
     } else {
-      btnEnter.style.display = 'block';
+      btnPage.style.display = 'inline-flex';
     }
   }
 }
 
-function shareReferralLink() {
+function copyReferralLink() {
   if (!currentUser) return;
   var code = currentUser.referralCode || 'BB-XXXXX';
-  var msg = "Try *Bill Blue* - a professional, clean, fast invoicing & business ERP app! Generate unlimited invoices, print A4 bills, and receive instant UPI payments for free.\n\nJoin using my referral code *" + code + "* to unlock 1 Month of Pro plan features completely free!\n\nGet started at: https://billblue.in";
+  var link = window.location.origin + '?ref=' + code;
+  navigator.clipboard.writeText(link).then(function() {
+    showToast('Referral link copied to clipboard!', 'success');
+  }).catch(function() {
+    showToast('Failed to copy referral link.', 'error');
+  });
+}
+
+function shareReferralWhatsApp() {
+  if (!currentUser) return;
+  var code = currentUser.referralCode || 'BB-XXXXX';
+  var link = window.location.origin + '?ref=' + code;
+  var msg = "Try *Bill Blue* - a professional, clean, fast invoicing & business ERP app! Generate unlimited invoices, print A4 bills, and receive instant UPI payments for free.\n\nJoin using my referral link: " + link + "\n\nOr use my referral code *" + code + "* to unlock 1 Month of Pro plan features completely free!\n\nGet started at: " + window.location.origin;
   var url = "https://api.whatsapp.com/send?text=" + encodeURIComponent(msg);
   window.open(url, "_blank");
+}
+
+function shareReferralLink() {
+  // Backwards compatibility for old buttons
+  shareReferralWhatsApp();
 }
 
 function openEnterReferralModal() {
@@ -3397,7 +4369,6 @@ function submitReferralCode() {
         var referrerData = referrerDoc.data();
         var referrerUid = referrerDoc.id;
         
-        // Update current user (referee): add 1 month Pro
         var refD = new Date();
         if (currentUser.planType === 'pro' && currentUser.subscriptionExpiry && currentUser.subscriptionExpiry !== '—') {
           refD = new Date(currentUser.subscriptionExpiry);
@@ -3412,7 +4383,6 @@ function submitReferralCode() {
           referredBy: code
         };
         
-        // Update referrer: add 1 month Pro, add referee uid to referrals list
         var refList = referrerData.referrals || [];
         if (!refList.includes(firebaseAuth.currentUser.uid)) {
           refList.push(firebaseAuth.currentUser.uid);
@@ -3443,6 +4413,7 @@ function submitReferralCode() {
           currentUser.referredBy = code;
           
           handleLoggedInState();
+          initReferralSystem();
           closeEnterReferralModal();
           showToast('Success! 1 Month Pro activated for both of you!', 'success');
         }).catch(function(err) {
@@ -3472,7 +4443,6 @@ function submitReferralCode() {
   
   var referrer = users[foundReferrerEmail];
   
-  // Update referee (current user)
   var refereeExpiryD = new Date();
   if (currentUser.planType === 'pro' && currentUser.subscriptionExpiry && currentUser.subscriptionExpiry !== '—') {
     refereeExpiryD = new Date(currentUser.subscriptionExpiry);
@@ -3485,7 +4455,6 @@ function submitReferralCode() {
   currentUser.subscriptionExpiry = refereeExpiry;
   currentUser.referredBy = code;
   
-  // Update referrer in users database
   var referrerExpiryD = new Date();
   if (referrer.planType === 'pro' && referrer.subscriptionExpiry && referrer.subscriptionExpiry !== '—') {
     referrerExpiryD = new Date(referrer.subscriptionExpiry);
@@ -3502,7 +4471,6 @@ function submitReferralCode() {
     referrer.referrals.push(currentUser.email);
   }
   
-  // Save both
   var refereeEmail = currentUser.email.toLowerCase();
   users[refereeEmail] = {
     ...users[refereeEmail],
@@ -3521,4 +4489,3 @@ function submitReferralCode() {
   closeEnterReferralModal();
   showToast('Success! 1 Month Pro activated for both of you (Sandbox)!', 'success');
 }
-
