@@ -284,14 +284,14 @@ function addItemRow(data) {
   var tr = document.createElement('tr');
   tr.dataset.id = itemCounter;
   tr.innerHTML =
-    '<td class="td-sno">' + idx + '</td>' +
-    '<td><input type="text" placeholder="Item name" class="item-name" list="products-datalist" oninput="handleProductAutocomplete(this)" value="' + escapeAttr(d.name||'') + '"></td>' +
-    '<td><input type="text" placeholder="—" class="item-hsn" value="' + escapeAttr(d.hsn||'') + '"></td>' +
-    '<td><input type="number" placeholder="1" min="0" class="item-qty td-qty-input" value="' + (d.qty||'') + '" oninput="recalculate()"></td>' +
-    '<td><select class="item-unit-select item-unit">' + buildUnitOptions(d.unit||'Nos') + '</select></td>' +
-    '<td><input type="number" placeholder="0" min="0" step="0.01" class="item-rate td-rate-input" value="' + (d.rate||'') + '" oninput="recalculate()"></td>' +
-    '<td class="td-amount">' + formatINR((d.qty||0)*(d.rate||0)) + '</td>' +
-    '<td class="no-print"><button class="btn-remove" onclick="removeItemRow(this)" title="Remove"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
+    '<td class="td-sno" data-label="Item">' + idx + '</td>' +
+    '<td data-label="Item name"><input type="text" placeholder="Item name" class="item-name" list="products-datalist" oninput="handleProductAutocomplete(this)" value="' + escapeAttr(d.name||'') + '"></td>' +
+    '<td data-label="HSN / SAC"><input type="text" placeholder="—" class="item-hsn" value="' + escapeAttr(d.hsn||'') + '"></td>' +
+    '<td data-label="Quantity"><input type="number" placeholder="1" min="0" class="item-qty td-qty-input" value="' + (d.qty||'') + '" oninput="recalculate()"></td>' +
+    '<td data-label="Unit"><select class="item-unit-select item-unit">' + buildUnitOptions(d.unit||'Nos') + '</select></td>' +
+    '<td data-label="Rate"><input type="number" placeholder="0" min="0" step="0.01" class="item-rate td-rate-input" value="' + (d.rate||'') + '" oninput="recalculate()"></td>' +
+    '<td class="td-amount" data-label="Amount">' + formatINR((d.qty||0)*(d.rate||0)) + '</td>' +
+    '<td class="no-print" data-label="Remove item"><button type="button" class="btn-remove" onclick="removeItemRow(this)" title="Remove item" aria-label="Remove item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
   tr.style.opacity='0';tr.style.transform='translateY(4px)';
   itemsBody.appendChild(tr);
   requestAnimationFrame(function(){tr.style.transition='opacity .2s,transform .2s';tr.style.opacity='1';tr.style.transform='translateY(0)';});
@@ -2777,18 +2777,10 @@ window.addEventListener('appinstalled', function(evt) {
   showToast('Bill Blue installed successfully!', 'success');
 });
 
-// Check if swipe guide banner is required on small screens
+// The invoice editor now reflows for phones; no horizontal-drag instruction is needed.
 function checkSwipeHintVisibility() {
-  var isMobile = window.innerWidth <= 780;
-  var isDismissed = localStorage.getItem('billblue_dismissed_swipe_hint') === 'true';
   var banner = document.getElementById('swipe-hint-banner');
-  if (banner) {
-    if (isMobile && !isDismissed) {
-      banner.style.display = 'flex';
-    } else {
-      banner.style.display = 'none';
-    }
-  }
+  if (banner) banner.style.display = 'none';
 }
 
 // Close and save user swipe banner preferences
