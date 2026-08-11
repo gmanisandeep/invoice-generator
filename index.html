@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Bill Blue — Professional Indian GST Invoice Generator for small businesses.">
   <title>Bill Blue — GST Invoice Generator</title>
   <!-- High Performance CDN Prefetching -->
@@ -15,6 +15,8 @@
   <!-- PWA & Mobile Web App Settings -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1e40af">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
   
   <!-- Apple iOS Mobile App Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -465,12 +467,12 @@
         </div>
       </div>
 
-      <!-- Swipe Helper Banner for mobile -->
+      <!-- Kept for older saved sessions; the responsive editor no longer uses it. -->
       <div class="swipe-hint-banner" id="swipe-hint-banner" style="display:none">
         <span class="swipe-hint-icon">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
         </span>
-        <span class="swipe-hint-text">Drag invoice horizontally to edit full A4 sheet</span>
+        <span class="swipe-hint-text">This invoice is optimized for mobile editing.</span>
         <button class="swipe-hint-close" onclick="dismissSwipeHint()" title="Dismiss">&times;</button>
       </div>
 
